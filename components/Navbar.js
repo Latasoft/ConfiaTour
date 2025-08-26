@@ -7,6 +7,14 @@ export default function Navbar() {
   const { user, isLoaded } = useUser()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
+  // Agregar más enlaces de navegación
+  const navLinks = [
+    { href: '/', label: 'Inicio' },
+    { href: '/experiencias', label: 'Experiencias' },
+    { href: '/como-funciona', label: 'Cómo Funciona' },
+    { href: '/sobre-nosotros', label: 'Sobre Nosotros' }
+  ]
+
   return (
     <header className="sticky top-0 z-50 backdrop-blur-md bg-[#f6f4f2]/90 border-b border-black/5">
       <div className="max-w-6xl mx-auto px-5">
@@ -23,18 +31,15 @@ export default function Navbar() {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex items-center gap-6">
-            <a href="#explorar" className="px-3 py-2 rounded-xl hover:bg-black/5 transition-colors text-[#1C1C1C] font-medium">
-              Explorar
-            </a>
-            <a href="#corredor" className="px-3 py-2 rounded-xl hover:bg-black/5 transition-colors text-[#1C1C1C] font-medium">
-              Corredor
-            </a>
-            <a href="#comunidades" className="px-3 py-2 rounded-xl hover:bg-black/5 transition-colors text-[#1C1C1C] font-medium">
-              Comunidades
-            </a>
-            <Link href="/experiencias" className="px-3 py-2 rounded-xl hover:bg-black/5 transition-colors text-[#1C1C1C] font-medium">
-              Experiencias
-            </Link>
+            {navLinks.map((link) => (
+              <Link 
+                key={link.href} 
+                href={link.href} 
+                className="px-3 py-2 rounded-xl hover:bg-black/5 transition-colors text-[#1C1C1C] font-medium"
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
 
           {/* Auth Buttons */}
@@ -80,18 +85,15 @@ export default function Navbar() {
         {isMenuOpen && (
           <div className="md:hidden pb-4 border-t border-black/5 mt-4">
             <div className="flex flex-col gap-2 pt-4">
-              <a href="#explorar" className="px-3 py-2 rounded-xl hover:bg-black/5 transition-colors text-[#1C1C1C] font-medium">
-                Explorar
-              </a>
-              <a href="#corredor" className="px-3 py-2 rounded-xl hover:bg-black/5 transition-colors text-[#1C1C1C] font-medium">
-                Corredor
-              </a>
-              <a href="#comunidades" className="px-3 py-2 rounded-xl hover:bg-black/5 transition-colors text-[#1C1C1C] font-medium">
-                Comunidades
-              </a>
-              <Link href="/experiencias" className="px-3 py-2 rounded-xl hover:bg-black/5 transition-colors text-[#1C1C1C] font-medium">
-                Experiencias
-              </Link>
+              {navLinks.map((link) => (
+                <Link 
+                  key={link.href} 
+                  href={link.href} 
+                  className="px-3 py-2 rounded-xl hover:bg-black/5 transition-colors text-[#1C1C1C] font-medium"
+                >
+                  {link.label}
+                </Link>
+              ))}
             </div>
           </div>
         )}
