@@ -71,18 +71,7 @@ export default function HeroSection() {
             </div>
           </div>
 
-          {/* Key Benefits */}
-          <div className="flex flex-wrap justify-center gap-6 mt-12">
-            <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-white font-medium">
-              ✨ Experiencias auténticas
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-white font-medium">
-              🌍 Turismo colaborativo
-            </div>
-            <div className="bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full text-white font-medium">
-              🤝 Apoyo a comunidades
-            </div>
-          </div>
+
         </div>
       </div>
     </section>

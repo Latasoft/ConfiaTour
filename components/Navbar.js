@@ -21,9 +21,7 @@ export default function Navbar() {
         <nav className="flex items-center justify-between py-4">
           {/* Brand */}
           <Link href="/" className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl grid place-items-center bg-gradient-to-br from-[#F2C14E] via-[#C4533D] to-[#23A69A] shadow-inner border-2 border-black/10">
-              <span className="text-white font-bold text-sm">CT</span>
-            </div>
+            
             <h1 className="text-xl font-extrabold text-[#1C1C1C] tracking-wide">
               ConfiaTour
             </h1>

@@ -31,7 +31,7 @@ export default function CorredorSection() {
       <div className="max-w-6xl mx-auto px-5">
         <div className="text-center mb-16">
           <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="w-4 h-4 rounded bg-gradient-to-r from-[#C4533D] via-[#F2C14E] to-[#23A69A]"></div>
+            
             <h3 className="text-3xl md:text-4xl font-extrabold text-[#1C1C1C]">
               Corredor Bioceánico
             </h3>
