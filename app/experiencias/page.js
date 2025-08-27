@@ -1,12 +1,13 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { useSupabaseWithClerk } from '../../lib/useSupabaseWithClerk'
 import Navbar from '../../components/Navbar'
 import { useUser } from '@clerk/nextjs'
 import Link from 'next/link'
 
 export default function ExperienciasPage() {
   const { user, isLoaded } = useUser()
+  const supabase = useSupabaseWithClerk()
   const [data, setData] = useState([])
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -20,10 +21,16 @@ export default function ExperienciasPage() {
 
   useEffect(() => {
     const fetchExperiencias = async () => {
+      if (!supabase) return
+      
       try {
         const { data: experiencias, error: fetchError } = await supabase
           .from('experiencias')
-          .select('*')
+          .select(`
+            *,
+            perfiles!experiencias_emprendedor_id_fkey(nombre, apellido)
+          `)
+          .eq('activa', true)
           .order('created_at', { ascending: false })
 
         if (fetchError) {
@@ -39,7 +46,7 @@ export default function ExperienciasPage() {
     }
 
     fetchExperiencias()
-  }, [])
+  }, [supabase])
 
   return (
     <div className="min-h-screen bg-[#f6f4f2] text-black">

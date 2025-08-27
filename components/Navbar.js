@@ -1,10 +1,12 @@
 'use client'
-import { useUser, SignInButton, UserButton } from '@clerk/nextjs'
-import { useState } from 'react'
+import { SignInButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs'
+import { useUserProfile } from '../hooks/useUserProfile'
 import Link from 'next/link'
+import { useState } from 'react'
 
 export default function Navbar() {
   const { user, isLoaded } = useUser()
+  const { profile, isViajero, isEmprendedor } = useUserProfile()
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
   // Agregar más enlaces de navegación
@@ -16,55 +18,71 @@ export default function Navbar() {
   ]
 
   return (
-    <header className="sticky top-0 z-50 backdrop-blur-md bg-[#f6f4f2]/90 border-b border-black/5">
+    <nav className="bg-white shadow-lg fixed w-full top-0 z-40">
       <div className="max-w-6xl mx-auto px-5">
-        <nav className="flex items-center justify-between py-4">
-          {/* Brand */}
-          <Link href="/" className="flex items-center gap-3">
-            
-            <h1 className="text-xl font-extrabold text-[#1C1C1C] tracking-wide">
-              ConfiaTour
-            </h1>
+        <div className="flex justify-between items-center h-16">
+          
+          {/* Logo */}
+          <Link href="/" className="text-2xl font-bold text-[#23A69A]">
+            ConfiaTour
           </Link>
 
-          {/* Desktop Menu */}
-          <div className="hidden md:flex items-center gap-6">
-            {navLinks.map((link) => (
-              <Link 
-                key={link.href} 
-                href={link.href} 
-                className="px-3 py-2 rounded-xl hover:bg-black/5 transition-colors text-[#1C1C1C] font-medium"
-              >
-                {link.label}
+          {/* Navigation Links */}
+          <div className="hidden md:flex space-x-8">
+            <Link href="/experiencias" className="text-gray-700 hover:text-[#23A69A] transition-colors">
+              Experiencias
+            </Link>
+            
+            {/* Enlaces específicos para emprendedores */}
+            {isEmprendedor && (
+              <>
+                <Link href="/experiencias/crear" className="text-gray-700 hover:text-[#23A69A] transition-colors">
+                  Crear Experiencia
+                </Link>
+                <Link href="/mis-experiencias" className="text-gray-700 hover:text-[#23A69A] transition-colors">
+                  Mis Experiencias
+                </Link>
+              </>
+            )}
+            
+            {/* Enlaces específicos para viajeros */}
+            {isViajero && (
+              <Link href="/mis-reservas" className="text-gray-700 hover:text-[#23A69A] transition-colors">
+                Mis Reservas
               </Link>
-            ))}
+            )}
           </div>
 
-          {/* Auth Buttons */}
-          <div className="flex items-center gap-3">
-            {isLoaded ? (
-              user ? (
-                <div className="flex items-center gap-3">
-                  <span className="hidden sm:block text-sm text-[#6C3C2D] font-medium">
-                    ¡Hola, {user.firstName}!
-                  </span>
-                  <UserButton 
-                    appearance={{
-                      elements: {
-                        avatarBox: "w-8 h-8"
-                      }
-                    }}
-                  />
-                </div>
-              ) : (
+          {/* Auth Section */}
+          <div className="flex items-center space-x-4">
+            {!isLoaded && (
+              <div className="text-gray-500">Cargando...</div>
+            )}
+            
+            {isLoaded && !user && (
+              <>
                 <SignInButton mode="modal">
-                  <button className="bg-[#C4533D] text-white px-4 py-2 rounded-xl font-bold hover:bg-[#C4533D]/90 transition-colors">
-                    Iniciar Sesión
+                  <button className="text-gray-700 hover:text-[#23A69A] transition-colors">
+                    Iniciar sesión
                   </button>
                 </SignInButton>
-              )
-            ) : (
-              <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse"></div>
+                <SignUpButton mode="modal">
+                  <button className="bg-[#23A69A] text-white px-4 py-2 rounded-lg hover:bg-[#23A69A]/90 transition-colors">
+                    Registrarse
+                  </button>
+                </SignUpButton>
+              </>
+            )}
+            
+            {isLoaded && user && (
+              <div className="flex items-center space-x-3">
+                {profile && (
+                  <span className="text-sm text-gray-600">
+                    {isViajero ? '🧳' : isEmprendedor ? '🏪' : ''} {profile.nombre}
+                  </span>
+                )}
+                <UserButton afterSignOutUrl="/" />
+              </div>
             )}
 
             {/* Mobile menu button */}
@@ -77,7 +95,7 @@ export default function Navbar() {
               </svg>
             </button>
           </div>
-        </nav>
+        </div>
 
         {/* Mobile Menu */}
         {isMenuOpen && (
@@ -96,6 +114,6 @@ export default function Navbar() {
           </div>
         )}
       </div>
-    </header>
+    </nav>
   )
 }
