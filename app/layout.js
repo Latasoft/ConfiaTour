@@ -11,7 +11,7 @@ export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
       <html lang="es">
-        <body>
+        <body suppressHydrationWarning={true}>
           <Navbar />
           <main className="pt-16">{children}</main>
         </body>
