@@ -12,12 +12,19 @@ import {
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
 
-  // Enlaces de navegación
-  const navLinks = [
+  // Enlaces de navegación públicos
+  const publicNavLinks = [
     { href: '/', label: 'Inicio' },
     { href: '/experiencias', label: 'Experiencias' },
     { href: '/como-funciona', label: 'Cómo Funciona' },
     { href: '/sobre-nosotros', label: 'Sobre Nosotros' }
+  ]
+
+  // Enlaces de navegación para usuarios autenticados
+  const authNavLinks = [
+    { href: '/mis-experiencias', label: 'Mis Experiencias' },
+    { href: '/experiencias/crear', label: 'Crear Experiencia' },
+    { href: '/mis-reservas', label: 'Mis Reservas' }
   ]
 
   return (
@@ -41,6 +48,16 @@ export default function Navbar() {
             <Link href="/sobre-nosotros" className="text-gray-700 hover:text-[#23A69A] transition-colors">
               Sobre Nosotros
             </Link>
+            
+            {/* Enlaces solo para usuarios autenticados */}
+            <SignedIn>
+              <Link href="/mis-experiencias" className="text-gray-700 hover:text-[#23A69A] transition-colors">
+                Mis Experiencias
+              </Link>
+              <Link href="/experiencias/crear" className="text-gray-700 hover:text-[#23A69A] transition-colors">
+                Crear Experiencia
+              </Link>
+            </SignedIn>
           </div>
 
           {/* Auth Section */}
@@ -77,7 +94,8 @@ export default function Navbar() {
         {isMenuOpen && (
           <div className="md:hidden pb-4 border-t border-black/5 mt-4">
             <div className="flex flex-col gap-2 pt-4">
-              {navLinks.map((link) => (
+              {/* Enlaces públicos */}
+              {publicNavLinks.map((link) => (
                 <Link 
                   key={link.href} 
                   href={link.href} 
@@ -87,6 +105,20 @@ export default function Navbar() {
                   {link.label}
                 </Link>
               ))}
+              
+              {/* Enlaces para usuarios autenticados */}
+              <SignedIn>
+                {authNavLinks.map((link) => (
+                  <Link 
+                    key={link.href} 
+                    href={link.href} 
+                    className="px-3 py-2 rounded-xl hover:bg-black/5 transition-colors text-[#1C1C1C] font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </SignedIn>
               
               {/* Auth options for mobile */}
               <div className="flex flex-col gap-2 mt-4 px-3">

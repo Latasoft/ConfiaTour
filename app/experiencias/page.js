@@ -1,86 +1,68 @@
 'use client'
-import { useState } from 'react'
-import Navbar from '../../components/Navbar'
-import Link from 'next/link'
+import { useState, useEffect } from 'react'
+import FiltrosExperiencias from '../../components/FiltrosExperiencias'
+import ExperienciaCard from '../../components/ExperienciaCard'
+import { getExperiencias } from '../../lib/experiencias'
 
 export default function ExperienciasPage() {
-  const [experiencias] = useState([
-    {
-      id: 1,
-      titulo: "Tour Gastronómico por Salta",
-      descripcion: "Descubre los sabores únicos de la cocina salteña en un recorrido por restaurantes locales.",
-      precio: 120,
-      ubicacion: "Salta, Argentina",
-      imagen: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=1200&auto=format&fit=crop"
-    },
-    {
-      id: 2,
-      titulo: "Aventura en el Desierto de Atacama",
-      descripcion: "Explora el desierto más árido del mundo y sus increíbles paisajes.",
-      precio: 250,
-      ubicacion: "Antofagasta, Chile",
-      imagen: "https://images.unsplash.com/photo-1506905925346-21bda4d32df4?q=80&w=1200&auto=format&fit=crop"
-    },
-    {
-      id: 3,
-      titulo: "Cultura Guaraní en Paraguay",
-      descripcion: "Vive una experiencia única con comunidades guaraníes del Chaco paraguayo.",
-      precio: 180,
-      ubicacion: "Chaco, Paraguay",
-      imagen: "https://images.unsplash.com/photo-1544025162-d76694265947?q=80&w=1200&auto=format&fit=crop"
-    },
-    {
-      id: 4,
-      titulo: "Playas del Sur de Brasil",
-      descripcion: "Relájate en las hermosas costas del sur brasileño con actividades acuáticas.",
-      precio: 200,
-      ubicacion: "Sur de Brasil",
-      imagen: "https://images.unsplash.com/photo-1483729558449-99ef09a8c325?q=80&w=1200&auto=format&fit=crop"
+  const [experiencias, setExperiencias] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [filtros, setFiltros] = useState({})
+
+  useEffect(() => {
+    cargarExperiencias()
+  }, [filtros])
+
+  const cargarExperiencias = async () => {
+    try {
+      setLoading(true)
+      const data = await getExperiencias(filtros)
+      setExperiencias(data)
+    } catch (error) {
+      console.error('Error cargando experiencias:', error)
+    } finally {
+      setLoading(false)
     }
-  ])
+  }
+
+  const handleFiltrosChange = (nuevosFiltros) => {
+    setFiltros(nuevosFiltros)
+  }
 
   return (
     <div className="min-h-screen bg-[#f6f4f2] text-black">
       <main className="py-20">
-        <div className="max-w-6xl mx-auto px-5">
+        <div className="max-w-7xl mx-auto px-5">
+          <h1 className="text-4xl font-bold text-center mb-8">Explorar Experiencias</h1>
           
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-12">
-            <h1 className="text-4xl text-black font-bold mb-4 md:mb-0">Experiencias</h1>
-            
-            <Link href="/experiencias/crear">
-              <button className="bg-[#23A69A] text-white px-6 py-3 rounded-xl font-bold hover:bg-[#23A69A]/90 transition-colors flex items-center gap-2">
-                <span className="text-xl">+</span>
-                Crear Experiencia
-              </button>
-            </Link>
-          </div>
+          <FiltrosExperiencias onFiltrosChange={handleFiltrosChange} />
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {experiencias.map((exp) => (
-              <div key={exp.id} className="bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
-                <img
-                  src={exp.imagen}
-                  alt={exp.titulo}
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-6">
-                  <h3 className="text-xl font-bold mb-2">{exp.titulo}</h3>
-                  <p className="text-gray-600 mb-4">{exp.descripcion}</p>
-                  <div className="flex justify-between items-center mb-4">
-                    <span className="text-lg font-bold text-[#23A69A]">
-                      ${exp.precio}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      📍 {exp.ubicacion}
-                    </span>
-                  </div>
-                  <button className="w-full bg-[#23A69A] text-white py-2 rounded-xl font-bold hover:bg-[#23A69A]/90 transition-colors">
-                    Ver Detalles
-                  </button>
-                </div>
+          {loading ? (
+            <div className="text-center py-12">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#23A69A]"></div>
+              <p className="mt-2">Cargando experiencias...</p>
+            </div>
+          ) : (
+            <>
+              <div className="mb-4">
+                <p className="text-gray-600">
+                  Se encontraron {experiencias.length} experiencias
+                </p>
               </div>
-            ))}
-          </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {experiencias.map((experiencia) => (
+                  <ExperienciaCard key={experiencia.id} experiencia={experiencia} />
+                ))}
+              </div>
+              
+              {experiencias.length === 0 && (
+                <div className="text-center py-12">
+                  <p className="text-gray-500">No se encontraron experiencias con estos filtros.</p>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </main>
     </div>
