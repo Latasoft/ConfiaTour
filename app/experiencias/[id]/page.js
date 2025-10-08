@@ -4,8 +4,11 @@ import { useUser } from '@clerk/nextjs'
 import { useParams } from 'next/navigation'
 import Image from 'next/image'
 import { getExperienciaById, getResenasByExperiencia, crearReserva, crearResena } from '../../../lib/experiencias'
+import { initMercadoPago, Wallet } from '@mercadopago/sdk-react'
 
 export default function DetalleExperienciaPage() {
+
+  initMercadoPago('APP_USR-042e0ef9-c8c0-4b1b-bdf7-de8f207b5fbf')
   const { id } = useParams()
   const { user } = useUser()
   const [experiencia, setExperiencia] = useState(null)
