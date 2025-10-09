@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-export default function TransbankReturnPage() {
+function TransbankReturnContent() {
     const [result, setResult] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -131,4 +131,16 @@ export default function TransbankReturnPage() {
             </div>
         </div>
     );
+}
+
+function LoadingFallback() {
+    return <div>Loading...</div>
+}
+
+export default function TransbankReturnPage() {
+    return (
+        <Suspense fallback={<LoadingFallback />}>
+            <TransbankReturnContent />
+        </Suspense>
+    )
 }
