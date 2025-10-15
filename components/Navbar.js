@@ -31,7 +31,7 @@ export default function Navbar() {
     <nav className="bg-white shadow-lg fixed w-full top-0 z-40">
       <div className="max-w-6xl mx-auto px-5">
         <div className="flex justify-between items-center h-16">
-          
+
           {/* Logo */}
           <Link href="/" className="text-2xl font-bold text-[#23A69A]">
             ConfiaTour
@@ -48,7 +48,7 @@ export default function Navbar() {
             <Link href="/sobre-nosotros" className="text-gray-700 hover:text-[#23A69A] transition-colors">
               Sobre Nosotros
             </Link>
-            
+
             {/* Enlaces solo para usuarios autenticados */}
             <SignedIn>
               <Link href="/mis-experiencias" className="text-gray-700 hover:text-[#23A69A] transition-colors">
@@ -58,6 +58,9 @@ export default function Navbar() {
                 Crear Experiencia
               </Link>
             </SignedIn>
+            <Link href="/perfil" className="text-gray-700 hover:text-[#23A69A] transition-colors">
+             Ver Perfil
+            </Link>
           </div>
 
           {/* Auth Section */}
@@ -79,8 +82,9 @@ export default function Navbar() {
             </SignedIn>
           </div>
 
+
           {/* Mobile Menu Button */}
-          <button 
+          <button
             className="md:hidden text-gray-700"
             onClick={() => setIsMenuOpen(!isMenuOpen)}
           >
@@ -96,22 +100,22 @@ export default function Navbar() {
             <div className="flex flex-col gap-2 pt-4">
               {/* Enlaces públicos */}
               {publicNavLinks.map((link) => (
-                <Link 
-                  key={link.href} 
-                  href={link.href} 
+                <Link
+                  key={link.href}
+                  href={link.href}
                   className="px-3 py-2 rounded-xl hover:bg-black/5 transition-colors text-[#1C1C1C] font-medium"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {link.label}
                 </Link>
               ))}
-              
+
               {/* Enlaces para usuarios autenticados */}
               <SignedIn>
                 {authNavLinks.map((link) => (
-                  <Link 
-                    key={link.href} 
-                    href={link.href} 
+                  <Link
+                    key={link.href}
+                    href={link.href}
                     className="px-3 py-2 rounded-xl hover:bg-black/5 transition-colors text-[#1C1C1C] font-medium"
                     onClick={() => setIsMenuOpen(false)}
                   >
@@ -119,7 +123,7 @@ export default function Navbar() {
                   </Link>
                 ))}
               </SignedIn>
-              
+
               {/* Auth options for mobile */}
               <div className="flex flex-col gap-2 mt-4 px-3">
                 <SignedOut>
