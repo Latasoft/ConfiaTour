@@ -68,7 +68,7 @@ export default function VerificarPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     // Validar que todos los archivos estén presentes
     if (!files.carnet_frontal || !files.carnet_trasero || !files.foto_cara) {
       setErrors({
@@ -107,16 +107,16 @@ export default function VerificarPage() {
 
       // Subir las tres imágenes al bucket privado "verificacion"
       console.log('📤 Subiendo imágenes...');
-      
+
       // Usar el user.id de Clerk directamente
       const userFolder = user.id;
-      
+
       const uploadPromises = [
         uploadVerificationImage(files.carnet_frontal, `${userFolder}/carnet_frontal`),
         uploadVerificationImage(files.carnet_trasero, `${userFolder}/carnet_trasero`),
         uploadVerificationImage(files.foto_cara, `${userFolder}/foto_cara`)
       ];
-      
+
       const [carnetFrontal, carnetTrasero, fotoCara] = await Promise.all(uploadPromises);
 
       console.log('✅ Imágenes subidas:', { carnetFrontal, carnetTrasero, fotoCara });
@@ -188,7 +188,7 @@ export default function VerificarPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      
+
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="bg-white rounded-lg shadow-lg p-8">
           <div className="mb-8">
@@ -213,7 +213,7 @@ export default function VerificarPage() {
               <p className="text-sm text-gray-600 mb-4">
                 Sube una foto clara del frente de tu carnet de identidad
               </p>
-              
+
               {!files.carnet_frontal ? (
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
                   <div className="space-y-2">
@@ -252,7 +252,7 @@ export default function VerificarPage() {
                   </button>
                 </div>
               )}
-              
+
               {errors.carnet_frontal && (
                 <p className="mt-2 text-sm text-red-600">{errors.carnet_frontal}</p>
               )}
@@ -266,7 +266,7 @@ export default function VerificarPage() {
               <p className="text-sm text-gray-600 mb-4">
                 Sube una foto clara del reverso de tu carnet de identidad
               </p>
-              
+
               {!files.carnet_trasero ? (
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
                   <div className="space-y-2">
@@ -305,7 +305,7 @@ export default function VerificarPage() {
                   </button>
                 </div>
               )}
-              
+
               {errors.carnet_trasero && (
                 <p className="mt-2 text-sm text-red-600">{errors.carnet_trasero}</p>
               )}
@@ -319,7 +319,7 @@ export default function VerificarPage() {
               <p className="text-sm text-gray-600 mb-4">
                 Sube una selfie clara donde se vea tu rostro completo
               </p>
-              
+
               {!files.foto_cara ? (
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 transition-colors">
                   <div className="space-y-2">
@@ -358,7 +358,7 @@ export default function VerificarPage() {
                   </button>
                 </div>
               )}
-              
+
               {errors.foto_cara && (
                 <p className="mt-2 text-sm text-red-600">{errors.foto_cara}</p>
               )}
@@ -395,7 +395,7 @@ export default function VerificarPage() {
               >
                 Cancelar
               </button>
-              
+
               <button
                 type="submit"
                 disabled={loading || !files.carnet_frontal || !files.carnet_trasero || !files.foto_cara}

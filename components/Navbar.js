@@ -54,9 +54,6 @@ export default function Navbar() {
               <Link href="/mis-experiencias" className="text-gray-700 hover:text-[#23A69A] transition-colors">
                 Mis Experiencias
               </Link>
-              <Link href="/experiencias/crear" className="text-gray-700 hover:text-[#23A69A] transition-colors">
-                Crear Experiencia
-              </Link>
             </SignedIn>
             <Link href="/perfil" className="text-gray-700 hover:text-[#23A69A] transition-colors">
              Ver Perfil
