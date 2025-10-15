@@ -1,21 +1,38 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { getExperienciaById, getResenasByExperiencia, crearReserva, crearResena } from '../../../lib/experiencias'
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react'
+
+// Tasas de conversión simples a CLP
+const RATES_TO_CLP = {
+  USD: 950,   // 1 USD = 950 CLP
+  ARS: 1.1,   // 1 ARS = 1.1 CLP  
+  CLP: 1,     // 1 CLP = 1 CLP
+  BRL: 180,   // 1 BRL = 180 CLP
+  PYG: 0.13   // 1 PYG = 0.13 CLP
+}
+
+// Función simple para convertir a CLP
+const convertToCLP = (amount, currency) => {
+  const rate = RATES_TO_CLP[currency] || 1
+  return Math.round(amount * rate)
+}
 
 export default function DetalleExperienciaPage() {
 
   initMercadoPago('APP_USR-042e0ef9-c8c0-4b1b-bdf7-de8f207b5fbf')
   const { id } = useParams()
   const { user } = useUser()
+  const router = useRouter()
   const [experiencia, setExperiencia] = useState(null)
   const [resenas, setResenas] = useState([])
   const [loading, setLoading] = useState(true)
   const [cantidadPersonas, setCantidadPersonas] = useState(1)
   const [showReservaModal, setShowReservaModal] = useState(false)
+  const [procesandoPago, setProcesandoPago] = useState(false)
   
   // Estados para reseñas
   const [showResenaModal, setShowResenaModal] = useState(false)
@@ -54,24 +71,75 @@ export default function DetalleExperienciaPage() {
     }
 
     try {
+      setProcesandoPago(true)
+
+      // Convertir TODO a CLP automáticamente
+      const precioOriginal = experiencia.precio
+      const monedaOriginal = experiencia.moneda
+      const precioCLP = convertToCLP(precioOriginal, monedaOriginal)
+      const totalCLP = precioCLP * cantidadPersonas
+      
+      console.log('💰 Pago automático en CLP:', {
+        original: `${precioOriginal} ${monedaOriginal}`,
+        convertido: `${precioCLP} CLP`,
+        total: `${totalCLP} CLP`
+      })
+
+      // Generar IDs únicos
+      const buyOrder = `ORD${Date.now()}${Math.random().toString(36).substring(2, 8).toUpperCase()}`
+      const sessionId = `SES${Date.now()}${Math.random().toString(36).substring(2, 15).toUpperCase()}`
+
+      // Crear reserva directamente en CLP
       const reservaData = {
         experiencia_id: experiencia.id,
         usuario_id: user.id,
         fecha_reserva: new Date().toISOString(),
         fecha_experiencia: experiencia.fecha_inicio,
         cantidad_personas: cantidadPersonas,
-        precio_total: experiencia.precio * cantidadPersonas,
-        estado: 'pendiente',
-        metodo_pago: 'pendiente',
-        pagado: false
+        precio_total: totalCLP, // Todo en CLP
+        estado: 'pendiente_pago',
+        metodo_pago: 'transbank',
+        pagado: false,
+        buy_order: buyOrder,
+        session_id: sessionId
       }
 
-      await crearReserva(reservaData)
-      alert('¡Reserva creada exitosamente!')
-      setShowReservaModal(false)
+      console.log('📝 Creando reserva:', reservaData)
+      const reservaCreada = await crearReserva(reservaData)
+      
+      const returnUrl = `${window.location.origin}/transbank/return?reserva_id=${reservaCreada.id}&experiencia_id=${experiencia.id}`
+
+      // Crear transacción en CLP
+      const response = await fetch('/api/transbank/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: totalCLP, // Siempre en CLP
+          buyOrder: buyOrder,
+          returnUrl: returnUrl,
+          sessionId: sessionId
+        })
+      })
+
+      const transactionResult = await response.json()
+
+      if (!response.ok) {
+        throw new Error(transactionResult.error || 'Error creando transacción')
+      }
+
+      console.log('✅ Transacción creada en CLP:', transactionResult)
+
+      // Redirigir a Transbank
+      window.location.href = `${transactionResult.url}?token_ws=${transactionResult.token}`
+
     } catch (error) {
-      console.error('Error creando reserva:', error)
-      alert('Error al crear la reserva')
+      console.error('💥 Error procesando pago:', error)
+      alert(`Error al procesar el pago: ${error.message}`)
+    } finally {
+      setProcesandoPago(false)
+      setShowReservaModal(false)
     }
   }
 
@@ -114,9 +182,9 @@ export default function DetalleExperienciaPage() {
   }
 
   // Verificar si el usuario ya dejó una reseña
-  const yaDejoResena = user && resenas.some(resena => resena.usuario_id_id === user.id)
+  const yaDeJoResena = user && resenas.some(resena => resena.usuario_id_id === user.id)
 
-  // Función segura para parsear imágenes (igual que en ExperienciaCard)
+  // Función segura para parsear imágenes
   const parseImagenes = (imagenesData) => {
     if (!imagenesData) return []
     
@@ -135,23 +203,16 @@ export default function DetalleExperienciaPage() {
     }
   }
 
-  // Función para validar y convertir URLs de imágenes (igual que en ExperienciaCard)
+  // Función para validar y convertir URLs de imágenes
   const validarImagenUrl = (imagenUrl) => {
     if (!imagenUrl || typeof imagenUrl !== 'string') return null
     
-    // Si ya es una URL completa (http/https), devolverla
     if (imagenUrl.startsWith('http://') || imagenUrl.startsWith('https://')) {
       return imagenUrl
     }
     
-    // Si empieza con /, es una ruta válida
     if (imagenUrl.startsWith('/')) {
       return imagenUrl
-    }
-    
-    // Si es solo un nombre de archivo, usar placeholder
-    if (imagenUrl.includes('.')) {
-      return null
     }
     
     return null
@@ -176,11 +237,14 @@ export default function DetalleExperienciaPage() {
   const imagenes = parseImagenes(experiencia.imagenes)
   const imagenesValidas = imagenes.map(validarImagenUrl).filter(Boolean)
 
+  // Convertir precio a CLP para mostrar
+  const precioCLP = convertToCLP(experiencia.precio, experiencia.moneda)
+
   return (
     <div className="min-h-screen bg-[#f6f4f2] text-black">
       <main className="py-20">
         <div className="max-w-6xl mx-auto px-5">
-          {/* Galería de imágenes */}
+          {/* Galería de imágenes - sin cambios */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
             {imagenesValidas.length > 0 ? (
               imagenesValidas.map((imagen, index) => (
@@ -211,7 +275,7 @@ export default function DetalleExperienciaPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Información principal */}
+            {/* Información principal - sin cambios */}
             <div className="lg:col-span-2">
               <div className="bg-white p-6 rounded-lg shadow-md mb-6">
                 <div className="flex items-center justify-between mb-4">
@@ -253,11 +317,11 @@ export default function DetalleExperienciaPage() {
                 </div>
               </div>
 
-              {/* Reseñas */}
+              {/* Reseñas - CORREGIDO */}
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-bold">Reseñas ({resenas.length})</h3>
-                  {user && !yaDejoResena && (
+                  {user && !yaDeJoResena && ( // ← CORREGIDO: era yaDeJoResena
                     <button
                       onClick={() => setShowResenaModal(true)}
                       className="bg-[#23A69A] text-white px-4 py-2 rounded-lg hover:bg-[#1e8a7e] transition-colors"
@@ -293,14 +357,19 @@ export default function DetalleExperienciaPage() {
               </div>
             </div>
 
-            {/* Panel de reserva */}
+            {/* Panel de reserva - ACTUALIZADO para mostrar solo CLP */}
             <div className="lg:col-span-1">
               <div className="bg-white p-6 rounded-lg shadow-md sticky top-4">
                 <div className="text-center mb-4">
                   <span className="text-3xl font-bold text-[#23A69A]">
-                    ${experiencia.precio}
+                    ${precioCLP.toLocaleString()}
                   </span>
-                  <span className="text-gray-600"> {experiencia.moneda} por persona</span>
+                  <span className="text-gray-600"> CLP por persona</span>
+                  {experiencia.moneda !== 'CLP' && (
+                    <div className="text-sm text-gray-500 mt-1">
+                      (Convertido desde {experiencia.precio} {experiencia.moneda})
+                    </div>
+                  )}
                 </div>
 
                 <div className="mb-4">
@@ -324,24 +393,36 @@ export default function DetalleExperienciaPage() {
                   <div className="flex justify-between">
                     <span>Total:</span>
                     <span className="font-bold">
-                      ${(experiencia.precio * cantidadPersonas).toFixed(2)} {experiencia.moneda}
+                      ${(precioCLP * cantidadPersonas).toLocaleString()} CLP
                     </span>
                   </div>
                 </div>
 
                 <button
                   onClick={() => setShowReservaModal(true)}
-                  className="w-full bg-[#23A69A] text-white py-3 rounded-lg hover:bg-[#1e8a7e] transition-colors font-medium"
+                  disabled={procesandoPago}
+                  className="w-full bg-[#23A69A] text-white py-3 rounded-lg hover:bg-[#1e8a7e] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Reservar Ahora
+                  {procesandoPago ? (
+                    <div className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                      Procesando...
+                    </div>
+                  ) : (
+                    'Reservar Ahora'
+                  )}
                 </button>
+
+                <p className="text-xs text-gray-500 mt-2 text-center">
+                  Pago seguro con Transbank 🔒
+                </p>
               </div>
             </div>
           </div>
         </div>
       </main>
 
-      {/* Modal de confirmación de reserva */}
+      {/* Modal de confirmación - ACTUALIZADO */}
       {showReservaModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
@@ -350,27 +431,32 @@ export default function DetalleExperienciaPage() {
               ¿Estás seguro de que quieres reservar esta experiencia para {cantidadPersonas} persona{cantidadPersonas > 1 ? 's' : ''}?
             </p>
             <div className="mb-4 p-3 bg-gray-50 rounded">
-              <p><strong>Total a pagar:</strong> ${(experiencia.precio * cantidadPersonas).toFixed(2)} {experiencia.moneda}</p>
+              <p><strong>Experiencia:</strong> {experiencia.titulo}</p>
+              <p><strong>Cantidad:</strong> {cantidadPersonas} persona{cantidadPersonas > 1 ? 's' : ''}</p>
+              <p><strong>Total a pagar:</strong> ${(precioCLP * cantidadPersonas).toLocaleString()} CLP</p>
+              <p className="text-sm text-gray-600 mt-2">Pago procesado con Transbank</p>
             </div>
             <div className="flex space-x-4">
               <button
                 onClick={() => setShowReservaModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                disabled={procesandoPago}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleReservar}
-                className="flex-1 px-4 py-2 bg-[#23A69A] text-white rounded-lg hover:bg-[#1e8a7e]"
+                disabled={procesandoPago}
+                className="flex-1 px-4 py-2 bg-[#23A69A] text-white rounded-lg hover:bg-[#1e8a7e] disabled:opacity-50"
               >
-                Confirmar
+                {procesandoPago ? 'Procesando...' : 'Pagar con Transbank'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Modal para crear reseña */}
+      {/* Modal para crear reseña - sin cambios */}
       {showResenaModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">

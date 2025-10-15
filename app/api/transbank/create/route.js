@@ -2,28 +2,26 @@ import { TransbankWebpayPlus } from '../../../../lib/transbank.js';
 
 export async function POST(request) {
     try {
-        console.log('Creating transaction...');
+        console.log('🏦 API: Creando transacción Transbank...');
         
-        const { amount, returnUrl } = await request.json();
+        const body = await request.json();
+        const { amount, buyOrder, returnUrl, sessionId } = body;
         
-        console.log('Request data:', { amount, returnUrl });
-        
-        if (!amount || !returnUrl) {
+        console.log('📊 API: Datos recibidos:', { amount, buyOrder, returnUrl, sessionId });
+
+        // Validar datos
+        if (!amount || !buyOrder || !returnUrl) {
             return Response.json(
-                { error: 'Missing required fields: amount, returnUrl' },
+                { error: 'Faltan parámetros requeridos' }, 
                 { status: 400 }
             );
         }
 
-        const webpay = new TransbankWebpayPlus();
+        // Crear instancia de Transbank
+        const transbank = new TransbankWebpayPlus();
         
-        const buyOrder = webpay.generateBuyOrder();
-        const sessionId = webpay.generateSessionId();
-        
-        console.log('Generated:', { buyOrder, sessionId });
-
-        // Validar parámetros antes de enviar
-        const validationErrors = webpay.validateTransactionParams(
+        // Validar parámetros
+        const validationErrors = transbank.validateTransactionParams(
             amount, 
             buyOrder, 
             returnUrl, 
@@ -32,26 +30,22 @@ export async function POST(request) {
 
         if (validationErrors.length > 0) {
             return Response.json(
-                { error: `Validation errors: ${validationErrors.join(', ')}` },
+                { error: 'Errores de validación', details: validationErrors }, 
                 { status: 400 }
             );
         }
-        
-        const transaction = await webpay.createTransaction(
-            amount,
-            buyOrder,
-            returnUrl,
-            sessionId
-        );
 
-        console.log('Transaction created:', transaction);
-
-        return Response.json(transaction);
+        // Crear transacción
+        const result = await transbank.createTransaction(amount, buyOrder, returnUrl, sessionId);
         
+        console.log('✅ API: Transacción creada:', result);
+
+        return Response.json(result);
+
     } catch (error) {
-        console.error('Error creating transaction:', error);
+        console.error('💥 API Error:', error);
         return Response.json(
-            { error: error.message },
+            { error: 'Error interno del servidor', details: error.message }, 
             { status: 500 }
         );
     }
