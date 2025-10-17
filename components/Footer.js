@@ -2,13 +2,13 @@ import React from 'react';
 
 export default function Footer() {
   return (
-    <footer className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 text-white">
+    <footer className="bg-gradient-to-r from-[#23A69A] via-[#1d8a80] to-[#23A69A] text-white">
       <div className="max-w-7xl mx-auto py-12 px-4">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Logo y descripción */}
           <div className="md:col-span-1">
             <div className="flex items-center mb-4">
-              <div className="bg-blue-600 p-2 rounded-lg mr-3">
+              <div className="bg-white/20 p-2 rounded-lg mr-3">
                 <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -16,7 +16,7 @@ export default function Footer() {
               </div>
               <h3 className="text-2xl font-bold">ConfiaTour</h3>
             </div>
-            <p className="text-gray-300 leading-relaxed">
+            <p className="text-white/80 leading-relaxed">
               Tu compañero de confianza para experiencias únicas en Chile. 
               Descubre alojamientos, transporte y tours locales.
             </p>
@@ -24,25 +24,25 @@ export default function Footer() {
 
           {/* Enlaces rápidos */}
           <div>
-            <h4 className="text-lg font-semibold mb-4 text-blue-400">Enlaces Rápidos</h4>
+            <h4 className="text-lg font-semibold mb-4 text-white">Enlaces Rápidos</h4>
             <ul className="space-y-2">
               <li>
-                <a href="/experiencias" className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center">
+                <a href="/experiencias" className="text-white/80 hover:text-white transition-colors duration-200 flex items-center">
                   <span className="mr-2">→</span> Experiencias
                 </a>
               </li>
               <li>
-                <a href="/como-funciona" className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center">
+                <a href="/como-funciona" className="text-white/80 hover:text-white transition-colors duration-200 flex items-center">
                   <span className="mr-2">→</span> Cómo Funciona
                 </a>
               </li>
               <li>
-                <a href="/sobre-nosotros" className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center">
+                <a href="/sobre-nosotros" className="text-white/80 hover:text-white transition-colors duration-200 flex items-center">
                   <span className="mr-2">→</span> Sobre Nosotros
                 </a>
               </li>
               <li>
-                <a href="/mis-reservas" className="text-gray-300 hover:text-white transition-colors duration-200 flex items-center">
+                <a href="/mis-reservas" className="text-white/80 hover:text-white transition-colors duration-200 flex items-center">
                   <span className="mr-2">→</span> Mis Reservas
                 </a>
               </li>
@@ -51,13 +51,13 @@ export default function Footer() {
 
           {/* Redes sociales */}
           <div>
-            <h4 className="text-lg font-semibold mb-4 text-blue-400">Síguenos</h4>
+            <h4 className="text-lg font-semibold mb-4 text-white">Síguenos</h4>
             <div className="space-y-3">
               <a 
                 href="https://instagram.com/confiatour" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center text-gray-300 hover:text-pink-400 transition-colors duration-200 group"
+                className="flex items-center text-white/80 hover:text-pink-300 transition-colors duration-200 group"
               >
                 <div className="bg-gradient-to-r from-purple-500 to-pink-500 p-2 rounded-lg mr-3 group-hover:scale-110 transition-transform duration-200">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -71,7 +71,7 @@ export default function Footer() {
                 href="https://facebook.com/confiatour" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center text-gray-300 hover:text-blue-400 transition-colors duration-200 group"
+                className="flex items-center text-white/80 hover:text-blue-300 transition-colors duration-200 group"
               >
                 <div className="bg-blue-600 p-2 rounded-lg mr-3 group-hover:scale-110 transition-transform duration-200">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -85,13 +85,13 @@ export default function Footer() {
 
           {/* Contacto */}
           <div>
-            <h4 className="text-lg font-semibold mb-4 text-blue-400">Contacto</h4>
+            <h4 className="text-lg font-semibold mb-4 text-white">Contacto</h4>
             <div className="space-y-3">
               <a 
                 href="https://wa.me/56912345678?text=Hola, necesito información sobre los servicios de ConfiaTour"
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="flex items-center text-gray-300 hover:text-green-400 transition-colors duration-200 group"
+                className="flex items-center text-white/80 hover:text-green-300 transition-colors duration-200 group"
               >
                 <div className="bg-green-500 p-2 rounded-lg mr-3 group-hover:scale-110 transition-transform duration-200">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 24 24">
@@ -100,19 +100,19 @@ export default function Footer() {
                 </div>
                 <div>
                   <div className="font-medium">WhatsApp</div>
-                  <div className="text-sm text-gray-400">+56 9 1234 5678</div>
+                  <div className="text-sm text-white/60">+56 9 1234 5678</div>
                 </div>
               </a>
 
-              <div className="flex items-center text-gray-300">
-                <div className="bg-gray-600 p-2 rounded-lg mr-3">
+              <div className="flex items-center text-white/80">
+                <div className="bg-white/20 p-2 rounded-lg mr-3">
                   <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
                 </div>
                 <div>
                   <div className="font-medium">Email</div>
-                  <div className="text-sm text-gray-400">info@confiatour.cl</div>
+                  <div className="text-sm text-white/60">info@confiatour.cl</div>
                 </div>
               </div>
             </div>
@@ -120,16 +120,16 @@ export default function Footer() {
         </div>
 
         {/* Línea divisoria y copyright */}
-        <div className="border-t border-gray-700 mt-12 pt-8">
+        <div className="border-t border-white/20 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="text-gray-400 text-sm mb-4 md:mb-0">
+            <div className="text-white/60 text-sm mb-4 md:mb-0">
               © 2024 ConfiaTour. Todos los derechos reservados.
             </div>
             <div className="flex space-x-6 text-sm">
-              <a href="/terminos" className="text-gray-400 hover:text-white transition-colors duration-200">
+              <a href="/terminos" className="text-white/60 hover:text-white transition-colors duration-200">
                 Términos y Condiciones
               </a>
-              <a href="/privacidad" className="text-gray-400 hover:text-white transition-colors duration-200">
+              <a href="/privacidad" className="text-white/60 hover:text-white transition-colors duration-200">
                 Política de Privacidad
               </a>
             </div>
