@@ -66,12 +66,12 @@ export class ExperienciaService {
       throw new ValidationError(validation.errors.join(', '))
     }
 
-    // Serializar imágenes si es array
+    // Asegurar que imagenes sea un array
     const experienciaData = {
       ...data,
       imagenes: Array.isArray(data.imagenes) 
-        ? JSON.stringify(data.imagenes) 
-        : data.imagenes
+        ? data.imagenes 
+        : (typeof data.imagenes === 'string' ? [data.imagenes] : [])
     }
 
     return this.repository.create(experienciaData)
@@ -92,12 +92,14 @@ export class ExperienciaService {
       throw new ValidationError('No tienes permiso para editar esta experiencia')
     }
 
-    // Serializar imágenes si es necesario
+    // Asegurar que imagenes sea un array si está presente
     const updateData = {
       ...data,
-      imagenes: Array.isArray(data.imagenes) 
-        ? JSON.stringify(data.imagenes) 
-        : data.imagenes
+      imagenes: data.imagenes 
+        ? (Array.isArray(data.imagenes) 
+            ? data.imagenes 
+            : (typeof data.imagenes === 'string' ? [data.imagenes] : undefined))
+        : undefined
     }
 
     return this.repository.update(id, updateData)

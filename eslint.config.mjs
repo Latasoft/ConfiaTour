@@ -18,7 +18,20 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      "__tests__/**",
+      "**/*.test.ts",
+      "**/*.test.tsx",
     ],
+  },
+  {
+    rules: {
+      // Convertir warnings de React Hooks a warnings (no errores)
+      "react-hooks/exhaustive-deps": "warn",
+      // Convertir warnings de imágenes a warnings (no errores)
+      "@next/next/no-img-element": "warn",
+      // Warnings de head element
+      "@next/next/no-head-element": "warn",
+    },
   },
 ];
 

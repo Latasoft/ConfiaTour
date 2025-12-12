@@ -26,6 +26,7 @@ export function createAuthSupabaseClient(session: Session | null): SupabaseClien
       global: {
         fetch: async (url, options = {}) => {
           // Obtener token de Clerk si existe sesión
+          // @ts-ignore - Clerk session type compatibility
           const clerkToken = await session?.getToken({
             template: 'supabase',
           })

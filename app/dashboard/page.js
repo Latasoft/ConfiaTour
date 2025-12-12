@@ -407,7 +407,7 @@ export default function AdminDashboard() {
           ) : verificationRequests.length === 0 ? (
             <div className="p-8 text-center">
               <div className="text-gray-500">
-                No hay solicitudes para mostrar con el filtro "{filter}"
+                No hay solicitudes para mostrar con el filtro &quot;{filter}&quot;
               </div>
               <button 
                 onClick={() => {

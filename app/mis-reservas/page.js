@@ -361,7 +361,7 @@ export default function MisReservasPage() {
           <div className="bg-white p-6 rounded-lg max-w-md w-full mx-4">
             <h3 className="text-xl font-bold mb-4">Cancelar Reserva</h3>
             <p className="mb-4">
-              ¿Estás seguro de que quieres cancelar tu reserva para "{reservaACancelar.experiencias?.titulo}"?
+              ¿Estás seguro de que quieres cancelar tu reserva para &quot;{reservaACancelar.experiencias?.titulo}&quot;?
             </p>
             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
               <p className="text-sm text-yellow-800">
