@@ -165,7 +165,8 @@ export default function CrearExperienciaPage() {
   }
 
   const categorias = [
-    'turismo', 'gastronomia', 'aventura', 'naturaleza', 'cultura', 'deportes'
+    'turismo', 'gastronomia', 'aventura', 'naturaleza', 'cultura', 'deportes',
+    'alojamiento', 'transporte', 'tours'
   ]
 
   // Show loading while Clerk is initializing
