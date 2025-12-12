@@ -15,7 +15,9 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "type-check": "tsc --noEmit",
-    "postinstall": "prisma generate || true"
+    "postinstall": "prisma generate || true",
+    "pre-deploy": "node -v && npm -v && npm run type-check && npm run build",
+    "pre-deploy:check": "powershell -ExecutionPolicy Bypass -File ./scripts/pre-deploy-check.ps1"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.31.6",
