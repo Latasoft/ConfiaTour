@@ -23,9 +23,8 @@ export const ComprobantePago: React.FC<ComprobantePagoProps> = ({
     : 'N/A'
 
   return (
-    <html>
-      <body style={{ fontFamily: 'Arial, sans-serif', lineHeight: '1.6', color: '#333', backgroundColor: '#f6f4f2', margin: 0, padding: 0 }}>
-        <table style={{ width: '100%', maxWidth: '600px', margin: '0 auto', backgroundColor: '#ffffff' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', lineHeight: '1.6', color: '#333', backgroundColor: '#f6f4f2', margin: 0, padding: 0 }}>
+      <table style={{ width: '100%', maxWidth: '600px', margin: '0 auto', backgroundColor: '#ffffff' }}>
           {/* Header */}
           <tr>
             <td style={{ backgroundColor: '#23A69A', padding: '30px 20px', textAlign: 'center' }}>
@@ -174,7 +173,6 @@ export const ComprobantePago: React.FC<ComprobantePagoProps> = ({
             </td>
           </tr>
         </table>
-      </body>
-    </html>
+    </div>
   )
 }

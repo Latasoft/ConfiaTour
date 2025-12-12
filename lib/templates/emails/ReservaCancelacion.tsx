@@ -20,12 +20,8 @@ export const ReservaCancelacion: React.FC<ReservaCancelacionProps> = ({
   })
 
   return (
-    <html>
-      <head>
-        <meta charSet="utf-8" />
-      </head>
-      <body style={{ fontFamily: 'Arial, sans-serif', lineHeight: '1.6', color: '#333', backgroundColor: '#f6f4f2', margin: 0, padding: 0 }}>
-        <table style={{ width: '100%', maxWidth: '600px', margin: '0 auto', backgroundColor: '#ffffff' }}>
+    <div style={{ fontFamily: 'Arial, sans-serif', lineHeight: '1.6', color: '#333', backgroundColor: '#f6f4f2', margin: 0, padding: 0 }}>
+      <table style={{ width: '100%', maxWidth: '600px', margin: '0 auto', backgroundColor: '#ffffff' }}>
           {/* Header */}
           <tr>
             <td style={{ backgroundColor: '#dc3545', padding: '30px 20px', textAlign: 'center' }}>
@@ -133,7 +129,6 @@ export const ReservaCancelacion: React.FC<ReservaCancelacionProps> = ({
             </td>
           </tr>
         </table>
-      </body>
-    </html>
+    </div>
   )
 }
