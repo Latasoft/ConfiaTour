@@ -9,9 +9,23 @@ const nextConfig = {
     // Ignorar errores de TypeScript durante el build (útil para deployment)
     ignoreBuildErrors: false, // Cambiar a true si hay problemas de types en producción
   },
+  // Deshabilitar generación estática para páginas de error
+  generateBuildId: async () => {
+    return 'build-' + Date.now()
+  },
   // Experimental: Permitir que el build continúe sin variables de entorno
   experimental: {
     // Render proporcionará las variables de entorno en tiempo de ejecución
+  },
+  // Webpack config para excluir templates de email del bundle de páginas
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals = config.externals || []
+      config.externals.push({
+        '@react-email/components': 'commonjs @react-email/components',
+      })
+    }
+    return config
   },
   images: {
     remotePatterns: [
