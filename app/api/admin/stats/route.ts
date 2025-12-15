@@ -2,10 +2,16 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { statsService } from '@/lib/services/stats.service'
 
-const ADMIN_EMAILS = [
-  'admin@confiatour.com',
-  'benjatorrealba2001@gmail.com',
-]
+const getAdminEmails = (): string[] => {
+  const emails = process.env.NEXT_PUBLIC_ADMIN_EMAILS
+  if (!emails) {
+    console.error('❌ NEXT_PUBLIC_ADMIN_EMAILS no está configurado')
+    return []
+  }
+  return emails.split(',').map(email => email.trim())
+}
+
+const ADMIN_EMAILS = getAdminEmails()
 
 export async function GET(req: NextRequest) {
   try {

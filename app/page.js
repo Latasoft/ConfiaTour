@@ -4,6 +4,8 @@ import HeroSection from '../components/HeroSection'
 import CorredorSection from '../components/CorredorSection'
 import BenefitsSection from '../components/BenefitsSection'
 
+export const dynamic = 'force-dynamic'
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-[#f6f4f2] text-black">

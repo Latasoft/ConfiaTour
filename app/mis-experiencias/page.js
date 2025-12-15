@@ -6,6 +6,8 @@ import { getImageUrl } from '../../lib/uploadImages'
 import Link from 'next/link'
 import Image from 'next/image'
 
+export const dynamic = 'force-dynamic'
+
 export default function MisExperienciasPage() {
   const [experiencias, setExperiencias] = useState([])
   const [loading, setLoading] = useState(true)

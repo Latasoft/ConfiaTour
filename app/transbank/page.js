@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 
+export const dynamic = 'force-dynamic'
+
 export default function TransbankTestPage() {
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);

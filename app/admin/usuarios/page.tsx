@@ -6,6 +6,8 @@ import { StatusBadge } from '@/components/admin/StatusBadge'
 import { Profile } from '@/types'
 import { supabase } from '@/lib/supabaseClient'
 
+export const dynamic = 'force-dynamic'
+
 interface UserWithStats extends Profile {
   total_experiencias?: number
   total_reservas?: number

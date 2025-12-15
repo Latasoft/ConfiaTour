@@ -6,6 +6,8 @@ import Image from 'next/image'
 import { getExperienciaById, getResenasByExperiencia, crearReserva, crearResena } from '../../../lib/experiencias'
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react'
 
+export const dynamic = 'force-dynamic'
+
 // Tasas de conversión simples a CLP
 const RATES_TO_CLP = {
   USD: 950,   // 1 USD = 950 CLP

@@ -6,6 +6,8 @@ import { StatusBadge } from '@/components/admin/StatusBadge'
 import { Reserva } from '@/types'
 import { supabase } from '@/lib/supabaseClient'
 
+export const dynamic = 'force-dynamic'
+
 export default function AdminReservasPage() {
   const [reservas, setReservas] = useState<Reserva[]>([])
   const [loading, setLoading] = useState(true)

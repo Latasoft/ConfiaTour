@@ -1,9 +1,11 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { supabase } from '../../../lib/supabaseClient'
 
-export default function TransbankReturnPage() {
+export const dynamic = 'force-dynamic'
+
+function TransbankReturnContent() {
   const [loading, setLoading] = useState(true)
   const [resultado, setResultado] = useState(null)
   const [error, setError] = useState(null)
@@ -196,5 +198,13 @@ export default function TransbankReturnPage() {
         </button>
       </div>
     </div>
+  )
+}
+
+export default function TransbankReturnPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#f6f4f2] flex items-center justify-center"><div className="text-[#23A69A]">Procesando pago...</div></div>}>
+      <TransbankReturnContent />
+    </Suspense>
   )
 }

@@ -2,6 +2,8 @@
 import { useState,useEffect } from 'react'
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react'
 
+export const dynamic = 'force-dynamic'
+
 // Mock data para la experiencia
 const mockExperiencia = {
     id: 1,

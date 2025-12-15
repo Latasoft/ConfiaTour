@@ -7,6 +7,8 @@ import { uploadMultipleImages, deleteImage } from '../../../lib/uploadImages'
 import Image from 'next/image'
 import Link from 'next/link'
 
+export const dynamic = 'force-dynamic'
+
 export default function CrearExperienciaPage() {
   const { user, isLoaded } = useUser()
   const router = useRouter()

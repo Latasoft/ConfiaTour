@@ -1,11 +1,13 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
 import { getReservasByUsuario, cancelarReserva, puedecancelarReserva } from '../../lib/experiencias'
 
-export default function MisReservasPage() {
+export const dynamic = 'force-dynamic'
+
+function MisReservasContent() {
   const { user, isLoaded } = useUser()
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -390,5 +392,13 @@ export default function MisReservasPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function MisReservasPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#f6f4f2] flex items-center justify-center"><div className="text-[#23A69A]">Cargando...</div></div>}>
+      <MisReservasContent />
+    </Suspense>
   )
 }

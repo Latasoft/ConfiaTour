@@ -6,6 +6,8 @@ import { StatusBadge } from '@/components/admin/StatusBadge'
 import { Experiencia } from '@/types'
 import { supabase } from '@/lib/supabaseClient'
 
+export const dynamic = 'force-dynamic'
+
 export default function AdminExperienciasPage() {
   const [experiencias, setExperiencias] = useState<Experiencia[]>([])
   const [loading, setLoading] = useState(true)

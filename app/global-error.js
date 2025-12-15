@@ -1,10 +1,13 @@
 'use client'
 
-import Link from 'next/link'
+import { useEffect } from 'react'
 
 export default function GlobalError({ error, reset }) {
+  useEffect(() => {
+    console.error('Global error:', error)
+  }, [error])
   return (
-    <html>
+    <html lang="es">
       <body style={{ 
         minHeight: '100vh', 
         display: 'flex', 
@@ -24,7 +27,7 @@ export default function GlobalError({ error, reset }) {
           </p>
           <div style={{ marginTop: '30px', display: 'flex', gap: '15px', justifyContent: 'center' }}>
             <button
-              onClick={() => reset()}
+              onClick={() => window.location.href = '/'}
               style={{
                 padding: '12px 30px',
                 backgroundColor: '#23A69A',
@@ -33,28 +36,26 @@ export default function GlobalError({ error, reset }) {
                 borderRadius: '8px',
                 fontSize: '16px',
                 fontWeight: '500',
-                cursor: 'pointer',
-                transition: 'background-color 0.3s'
-              }}
-            >
-              Intentar de nuevo
-            </button>
-            <Link 
-              href="/"
-              style={{
-                display: 'inline-block',
-                padding: '12px 30px',
-                backgroundColor: '#6c757d',
-                color: 'white',
-                textDecoration: 'none',
-                borderRadius: '8px',
-                fontSize: '16px',
-                fontWeight: '500',
-                transition: 'background-color 0.3s'
+                cursor: 'pointer'
               }}
             >
               Volver al inicio
-            </Link>
+            </button>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                padding: '12px 30px',
+                backgroundColor: '#6c757d',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '500',
+                cursor: 'pointer'
+              }}
+            >
+              Recargar página
+            </button>
           </div>
         </div>
       </body>

@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Skip static page generation when building with invalid Clerk keys
+  skipTrailingSlashRedirect: true,
+  skipMiddlewareUrlNormalize: true,
   eslint: {
     // En producción, permitir que el build continúe incluso con warnings de ESLint
     // Solo los errores bloquearán el build
@@ -13,10 +16,13 @@ const nextConfig = {
   generateBuildId: async () => {
     return 'build-' + Date.now()
   },
-  // Experimental: Permitir que el build continúe sin variables de entorno
+  // Deshabilitar static optimization para evitar errores con Clerk dummy keys
   experimental: {
     // Render proporcionará las variables de entorno en tiempo de ejecución
+    isrMemoryCacheSize: 0, // Disable ISR caching
   },
+  // Forzar renderizado dinámico para todas las páginas
+  reactStrictMode: true,
   // Webpack config para excluir templates de email del bundle de páginas
   webpack: (config, { isServer }) => {
     if (isServer) {

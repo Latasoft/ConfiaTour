@@ -7,6 +7,8 @@ import { getVerificationImageUrl } from '@/lib/uploadImages'
 import { DataTable } from '@/components/admin/DataTable'
 import { StatusBadge } from '@/components/admin/StatusBadge'
 
+export const dynamic = 'force-dynamic'
+
 interface VerificationRequest {
   id: string
   clerk_user_id: string

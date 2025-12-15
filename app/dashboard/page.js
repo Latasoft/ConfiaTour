@@ -6,11 +6,19 @@ import { getVerificationImageUrl } from '../../lib/uploadImages';
 import Navbar from '../../components/Navbar';
 import { useRouter } from 'next/navigation';
 
-// Lista de emails de administradores
-const ADMIN_EMAILS = [
-  'admin@confiatour.com',
-  'benjatorrealba2001@gmail.com', // Agrega tu email aquí
-];
+export const dynamic = 'force-dynamic'
+
+// Lista de emails de administradores desde variable de entorno
+const getAdminEmails = () => {
+  const emails = process.env.NEXT_PUBLIC_ADMIN_EMAILS
+  if (!emails) {
+    console.error('❌ NEXT_PUBLIC_ADMIN_EMAILS no está configurado')
+    return []
+  }
+  return emails.split(',').map(email => email.trim())
+}
+
+const ADMIN_EMAILS = getAdminEmails();
 
 export default function AdminDashboard() {
   const { user, isLoaded } = useUser();

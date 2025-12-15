@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic'
+
 export default function SobreNosotrosPage() {
   return (
     <div className="min-h-screen bg-[#f6f4f2] text-black">

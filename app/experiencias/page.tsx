@@ -7,6 +7,9 @@ import { getExperiencias } from '@/lib/experiencias'
 import { FiltrosExperiencias, Experiencia } from '@/types'
 import { useToast } from '@/lib/context/ToastContext'
 
+// Deshabilitar pre-rendering para páginas con Clerk
+export const dynamic = 'force-dynamic'
+
 export default function ExperienciasPage() {
   const [experiencias, setExperiencias] = useState<Experiencia[]>([])
   const [loading, setLoading] = useState(true)

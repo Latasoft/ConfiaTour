@@ -6,6 +6,8 @@ import Navbar from '../../components/Navbar';
 import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic'
+
 export default function PerfilPage() {
   const { user, isLoaded } = useUser();
   const [profile, setProfile] = useState(null);

@@ -6,6 +6,8 @@ import { uploadVerificationImage } from '../../../lib/uploadImages';
 import Navbar from '../../../components/Navbar';
 import { useRouter } from 'next/navigation';
 
+export const dynamic = 'force-dynamic'
+
 export default function VerificarPage() {
   const { user, isLoaded } = useUser();
   const router = useRouter();

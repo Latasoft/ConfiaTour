@@ -4,10 +4,16 @@ import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
-const ADMIN_EMAILS = [
-  'admin@confiatour.com',
-  'benjatorrealba2001@gmail.com',
-]
+const getAdminEmails = (): string[] => {
+  const emails = process.env.NEXT_PUBLIC_ADMIN_EMAILS
+  if (!emails) {
+    console.error('❌ NEXT_PUBLIC_ADMIN_EMAILS no está configurado')
+    return []
+  }
+  return emails.split(',').map(email => email.trim())
+}
+
+const ADMIN_EMAILS = getAdminEmails()
 
 interface AdminGuardProps {
   children: React.ReactNode

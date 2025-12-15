@@ -5,6 +5,8 @@ import { StatCard } from '@/components/admin/StatCard'
 import { statsService } from '@/lib/services/stats.service'
 import { AdminStats } from '@/types'
 
+export const dynamic = 'force-dynamic'
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState<AdminStats | null>(null)
   const [loading, setLoading] = useState(true)
