@@ -1,7 +1,15 @@
-import { Resend } from 'resend'
 import { Reserva, Experiencia, ReservaEmailData } from '@/types'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Cargar Resend dinámicamente para evitar errores durante el build
+let resend: any = null
+const getResend = async () => {
+  if (!resend) {
+    const { Resend } = await import('resend')
+    resend = new Resend(process.env.RESEND_API_KEY)
+  }
+  return resend
+}
+
 const FROM_EMAIL = process.env.RESEND_FROM_EMAIL || 'ConfiaTour <onboarding@resend.dev>'
 
 // Helpers para generar HTML de emails
@@ -199,7 +207,8 @@ export class EmailService {
 
       const emailHtml = generateConfirmacionHTML(reserva, experiencia, usuario.nombre)
 
-      await resend.emails.send({
+      const resendClient = await getResend()
+      await resendClient.emails.send({
         from: FROM_EMAIL,
         to: usuario.email,
         subject: `✅ Reserva Confirmada - ${experiencia.titulo}`,
@@ -223,7 +232,8 @@ export class EmailService {
 
       const emailHtml = generateCancelacionHTML(reserva, experiencia, usuario.nombre)
 
-      await resend.emails.send({
+      const resendClient = await getResend()
+      await resendClient.emails.send({
         from: FROM_EMAIL,
         to: usuario.email,
         subject: `❌ Reserva Cancelada - ${experiencia.titulo}`,
@@ -245,7 +255,8 @@ export class EmailService {
 
       const emailHtml = generateComprobanteHTML(reserva, experiencia, usuario.nombre)
 
-      await resend.emails.send({
+      const resendClient = await getResend()
+      await resendClient.emails.send({
         from: FROM_EMAIL,
         to: usuario.email,
         subject: `🧾 Comprobante de Pago - ${experiencia.titulo}`,
@@ -276,7 +287,8 @@ export class EmailService {
         day: 'numeric',
       })
 
-      await resend.emails.send({
+      const resendClient = await getResend()
+      await resendClient.emails.send({
         from: FROM_EMAIL,
         to: providerEmail,
         subject: `🎉 Nueva Reserva - ${experiencia.titulo}`,
