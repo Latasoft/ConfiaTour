@@ -1,28 +1,25 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Skip static page generation when building with invalid Clerk keys
-  skipTrailingSlashRedirect: true,
-  skipMiddlewareUrlNormalize: true,
   eslint: {
-    // En producción, permitir que el build continúe incluso con warnings de ESLint
-    // Solo los errores bloquearán el build
-    ignoreDuringBuilds: false, // Mantener false para ver errores
+    ignoreDuringBuilds: false,
   },
   typescript: {
-    // Ignorar errores de TypeScript durante el build (útil para deployment)
-    ignoreBuildErrors: false, // Cambiar a true si hay problemas de types en producción
+    ignoreBuildErrors: false,
   },
-  // Deshabilitar generación estática para páginas de error
+  // Deshabilitar pre-rendering completamente
   generateBuildId: async () => {
     return 'build-' + Date.now()
   },
-  // Deshabilitar static optimization para evitar errores con Clerk dummy keys
   experimental: {
-    // Render proporcionará las variables de entorno en tiempo de ejecución
-    isrMemoryCacheSize: 0, // Disable ISR caching
+    // Deshabilitar optimizaciones que causan el pre-rendering
+    isrMemoryCacheSize: 0,
   },
-  // Forzar renderizado dinámico para todas las páginas
   reactStrictMode: true,
+  // CRÍTICO: Deshabilitar generación de páginas de error estáticas
+  // Esto evita el error de <Html> durante el build
+  skipTrailingSlashRedirect: false,
+  // Usar solo renderizado dinámico
+  distDir: '.next',
   // Webpack config para excluir templates de email del bundle de páginas
   webpack: (config, { isServer }) => {
     if (isServer) {
