@@ -15,14 +15,13 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "type-check": "tsc --noEmit",
-    "postinstall": "prisma generate || true",
     "pre-deploy": "node -v && npm -v && npm run type-check && npm run build",
     "pre-deploy:check": "powershell -ExecutionPolicy Bypass -File ./scripts/pre-deploy-check.ps1"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.31.6",
     "@mercadopago/sdk-react": "^1.0.6",
-    "@supabase/supabase-js": "^2.56.0",
+    "@supabase/supabase-js": "2.56.0",
     "@tanstack/react-query": "^5.90.10",
     "axios": "^1.13.2",
     "mercadopago": "^2.8.0",
