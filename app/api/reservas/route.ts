@@ -1,0 +1,148 @@
+import { NextRequest, NextResponse } from 'next/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
+import { reservaService } from '@/lib/services/reserva.service'
+import { AppError } from '@/lib/utils/errors'
+
+/**
+ * POST /api/reservas
+ * Crea una nueva reserva (autenticado)
+ */
+export async function POST(req: NextRequest) {
+  try {
+    // 1. Autenticación
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
+      )
+    }
+
+    // 2. Obtener datos del usuario
+    const user = await currentUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Usuario no encontrado' },
+        { status: 401 }
+      )
+    }
+
+    // 3. Asegurar que el perfil existe en Supabase
+    const userEmail = user.emailAddresses[0]?.emailAddress
+    if (userEmail) {
+      const { supabaseAdmin } = await import('@/lib/db/supabase')
+      
+      // Verificar si el perfil existe
+      const { data: existingProfile } = await supabaseAdmin
+        .from('profiles')
+        .select('clerk_user_id')
+        .eq('clerk_user_id', userId)
+        .single()
+
+      // Si no existe, crearlo
+      if (!existingProfile) {
+        console.log('👤 Creando perfil para usuario:', userId)
+        await supabaseAdmin
+          .from('profiles')
+          .insert({
+            clerk_user_id: userId,
+            email: userEmail,
+            full_name: user.fullName || user.firstName || 'Usuario',
+            avatar_url: user.imageUrl,
+            user_type: 'viajero',
+            verified: false
+          })
+        console.log('✅ Perfil creado')
+      }
+    }
+
+    // 4. Parsear body
+    const body = await req.json()
+    console.log('📦 Body recibido:', JSON.stringify(body, null, 2))
+
+    // 5. FORZAR usuario_id desde sesión (seguridad)
+    const reservaData = {
+      ...body,
+      usuario_id: userId, // ✅ Siempre desde sesión autenticada
+    }
+
+    console.log('📝 Datos de reserva (con usuario_id):', JSON.stringify(reservaData, null, 2))
+    console.log('📝 Creando reserva para usuario:', userId)
+
+    // 6. Crear reserva (con validación automática)
+    const reserva = await reservaService.crearReserva(reservaData)
+
+    console.log('✅ Reserva creada:', reserva.id)
+
+    // 7. Responder
+    return NextResponse.json(
+      {
+        success: true,
+        reserva,
+      },
+      { status: 201 }
+    )
+  } catch (error) {
+    console.error('❌ Error creando reserva:', error)
+    console.error('❌ Stack trace:', error instanceof Error ? error.stack : 'No stack')
+    console.error('❌ Error completo:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2))
+
+    // Manejo de errores tipados
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.statusCode }
+      )
+    }
+
+    // Error genérico con más info en desarrollo
+    return NextResponse.json(
+      { 
+        error: 'Error interno del servidor',
+        details: error instanceof Error ? error.message : String(error)
+      },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * GET /api/reservas
+ * Obtiene las reservas del usuario autenticado
+ */
+export async function GET(req: NextRequest) {
+  try {
+    // 1. Autenticación
+    const { userId } = await auth()
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
+      )
+    }
+
+    console.log('📋 Obteniendo reservas de usuario:', userId)
+
+    // 2. Obtener reservas
+    const reservas = await reservaService.getReservasByUsuario(userId)
+
+    return NextResponse.json({
+      success: true,
+      reservas,
+    })
+  } catch (error) {
+    console.error('❌ Error obteniendo reservas:', error)
+
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.statusCode }
+      )
+    }
+
+    return NextResponse.json(
+      { error: 'Error interno del servidor' },
+      { status: 500 }
+    )
+  }
+}

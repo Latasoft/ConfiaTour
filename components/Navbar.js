@@ -22,9 +22,8 @@ export default function Navbar() {
 
   // Enlaces de navegación para usuarios autenticados
   const authNavLinks = [
-    { href: '/mis-experiencias', label: 'Mis Experiencias' },
-    { href: '/experiencias/crear', label: 'Crear Experiencia' },
-    { href: '/mis-reservas', label: 'Mis Reservas' }
+    { href: '/mis-reservas', label: 'Mis Reservas' },
+    { href: '/perfil', label: 'Mi Perfil' }
   ]
 
   return (
@@ -51,13 +50,13 @@ export default function Navbar() {
 
             {/* Enlaces solo para usuarios autenticados */}
             <SignedIn>
-              <Link href="/mis-experiencias" className="text-gray-700 hover:text-[#23A69A] transition-colors">
-                Mis Experiencias
+              <Link href="/mis-reservas" className="text-gray-700 hover:text-[#23A69A] transition-colors">
+                Mis Reservas
+              </Link>
+              <Link href="/perfil" className="text-gray-700 hover:text-[#23A69A] transition-colors">
+                Mi Perfil
               </Link>
             </SignedIn>
-            <Link href="/perfil" className="text-gray-700 hover:text-[#23A69A] transition-colors">
-             Ver Perfil
-            </Link>
           </div>
 
           {/* Auth Section */}

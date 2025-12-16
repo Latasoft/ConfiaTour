@@ -3,7 +3,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Image from 'next/image'
-import { getReservasByUsuario, cancelarReserva, puedecancelarReserva } from '../../lib/experiencias'
+import { ReservasAPI } from '../../lib/api/reservas'
 
 export const dynamic = 'force-dynamic'
 
@@ -37,10 +37,18 @@ function MisReservasContent() {
   const cargarReservas = async () => {
     try {
       setLoading(true)
-      const reservasData = await getReservasByUsuario(user.id)
+      // ✅ Usar nueva API - no requiere usuario_id
+      const reservasData = await ReservasAPI.obtenerMias()
       setReservas(reservasData)
     } catch (error) {
       console.error('Error cargando reservas:', error)
+      
+      // Manejar errores específicos
+      if (error.message.includes('No autorizado')) {
+        router.push('/sign-in')
+      } else {
+        alert('No se pudieron cargar las reservas. Inténtalo de nuevo.')
+      }
     } finally {
       setLoading(false)
     }
@@ -51,16 +59,35 @@ function MisReservasContent() {
 
     try {
       setCancelando(reservaACancelar.id)
-      await cancelarReserva(reservaACancelar.id, user.id)
+      
+      // ✅ Usar nueva API - valida 24h automáticamente
+      await ReservasAPI.cancelar(reservaACancelar.id)
       
       // Recargar reservas
       await cargarReservas()
       
       setShowCancelModal(false)
       setReservaACancelar(null)
+      
+      // Mostrar mensaje de éxito
+      alert('✅ Reserva cancelada exitosamente. Recibirás un email de confirmación.')
     } catch (error) {
       console.error('Error cancelando reserva:', error)
-      alert(`Error al cancelar la reserva: ${error.message}`)
+      
+      // Manejo de errores específicos
+      let errorMessage = 'Error al cancelar la reserva'
+      
+      if (error.message.includes('24 horas')) {
+        errorMessage = 'No puedes cancelar con menos de 24 horas de anticipación a la fecha de la experiencia'
+      } else if (error.message.includes('No autorizado')) {
+        errorMessage = 'No tienes permiso para cancelar esta reserva'
+      } else if (error.message.includes('ya está cancelada')) {
+        errorMessage = 'Esta reserva ya fue cancelada'
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      alert(`❌ ${errorMessage}`)
     } finally {
       setCancelando(null)
     }
@@ -69,6 +96,42 @@ function MisReservasContent() {
   const abrirModalCancelacion = (reserva) => {
     setReservaACancelar(reserva)
     setShowCancelModal(true)
+  }
+
+  const completarPago = async (reserva) => {
+    try {
+      // Validar que la reserva tenga los datos necesarios
+      if (!reserva.buy_order || !reserva.experiencia_id) {
+        alert('La reserva no tiene los datos necesarios para completar el pago. Por favor, contacta con soporte.')
+        return
+      }
+
+      // Crear nueva transacción con Transbank usando los datos de la reserva existente
+      const returnUrl = `${window.location.origin}/transbank/return?reserva_id=${reserva.id}&experiencia_id=${reserva.experiencia_id}`
+
+      const response = await fetch('/api/transbank/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: reserva.precio_total,
+          buyOrder: reserva.buy_order,
+          returnUrl: returnUrl,
+          sessionId: reserva.session_id
+        })
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Error creando transacción')
+      }
+
+      // Redirigir a Transbank
+      window.location.href = `${result.url}?token_ws=${result.token}`
+    } catch (error) {
+      console.error('Error completando pago:', error)
+      alert('Error al procesar el pago. Inténtalo de nuevo.')
+    }
   }
 
   // Filtrar reservas
@@ -249,9 +312,11 @@ function MisReservasContent() {
                   : null
                 const estadoInfo = getEstadoInfo(reserva)
                 
-                // CORREGIDO: Eliminar la referencia circular y arreglar el nombre de la función
-                const puedeCancel = reserva.estado === 'confirmada' 
-                  && puedecancelarReserva(reserva.fecha_experiencia, reserva.fecha_reserva)
+                // Verificar si puede cancelar (24 horas antes de la experiencia)
+                const ahora = new Date()
+                const fechaExperiencia = new Date(reserva.fecha_experiencia)
+                const horasRestantes = (fechaExperiencia - ahora) / (1000 * 60 * 60)
+                const puedeCancel = reserva.estado === 'confirmada' && horasRestantes >= 24
 
                 return (
                   <div key={reserva.id} className="bg-white rounded-lg shadow-md overflow-hidden">
@@ -324,7 +389,7 @@ function MisReservasContent() {
                           
                           {reserva.estado === 'pendiente_pago' && (
                             <button
-                              onClick={() => router.push(`/experiencias/${experiencia.id}`)}
+                              onClick={() => completarPago(reserva)}
                               className="px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
                             >
                               Completar Pago

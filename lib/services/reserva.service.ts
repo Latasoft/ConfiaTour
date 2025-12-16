@@ -31,15 +31,19 @@ export class ReservaService {
    * Crea una nueva reserva con validación y conversión de moneda
    */
   async crearReserva(data: Partial<Reserva>): Promise<Reserva> {
+    console.log('🔍 Service: Datos recibidos para crear reserva:', JSON.stringify(data, null, 2))
+    
     // Validar datos
     const validation = validateData(reservaSchema, data)
     if (!validation.success) {
+      console.error('❌ Service: Validación fallida:', validation.errors)
       throw new ValidationError(validation.errors.join(', '))
     }
 
-    // Asegurar que el precio esté en CLP para Transbank
-    // (La conversión ya debería estar hecha en el frontend, pero verificamos)
-    const reserva = await this.repository.create(data)
+    console.log('✅ Service: Datos validados:', JSON.stringify(validation.data, null, 2))
+
+    // Usar los datos validados (Zod los limpia y transforma)
+    const reserva = await this.repository.create(validation.data)
     
     return reserva
   }

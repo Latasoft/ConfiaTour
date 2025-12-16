@@ -1,12 +1,12 @@
 import { SupabaseClient } from '@supabase/supabase-js'
-import { supabase } from '../db/supabase'
+import { supabaseAdmin } from '../db/supabase'
 import { Reserva, EstadoReserva } from '@/types'
 import { NotFoundError, ValidationError, ConflictError } from '../utils/errors'
 
 export class ReservaRepository {
   private client: SupabaseClient
 
-  constructor(client: SupabaseClient = supabase) {
+  constructor(client: SupabaseClient = supabaseAdmin) {
     this.client = client
   }
 
@@ -65,15 +65,21 @@ export class ReservaRepository {
       creado_en: new Date().toISOString()
     }
 
+    console.log('💾 Repository: Datos a insertar en BD:', JSON.stringify(reservaData, null, 2))
+
     const { data, error } = await this.client
       .from('reservas')
       .insert([reservaData])
       .select()
       .single()
 
-    if (error) throw error
+    if (error) {
+      console.error('❌ Repository: Error insertando reserva:', error)
+      throw error
+    }
     if (!data) throw new ValidationError('No se pudo crear la reserva')
     
+    console.log('✅ Repository: Reserva guardada en BD:', JSON.stringify(data, null, 2))
     return data
   }
 

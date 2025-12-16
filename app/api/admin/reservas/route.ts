@@ -1,26 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { supabase } from '@/lib/supabaseClient'
+import { requireAdmin } from '@/lib/utils/auth'
+import { AppError } from '@/lib/utils/errors'
 
-const getAdminEmails = (): string[] => {
-  const emails = process.env.NEXT_PUBLIC_ADMIN_EMAILS
-  if (!emails) {
-    console.error('❌ NEXT_PUBLIC_ADMIN_EMAILS no está configurado')
-    return []
-  }
-  return emails.split(',').map(email => email.trim())
-}
-
-const ADMIN_EMAILS = getAdminEmails()
-
-// GET - Listar reservas con filtros
+// GET - Listar reservas con filtros (solo admin)
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = await auth()
-
-    if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-    }
+    // Verificar que el usuario es admin
+    const adminCheck = await requireAdmin()
+    if (adminCheck instanceof NextResponse) return adminCheck
 
     const { searchParams } = new URL(req.url)
     const estado = searchParams.get('estado')
@@ -55,14 +43,12 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// PUT - Cambiar estado de reserva
+// PUT - Cambiar estado de reserva (solo admin)
 export async function PUT(req: NextRequest) {
   try {
-    const { userId } = await auth()
-
-    if (!userId) {
-      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
-    }
+    // Verificar que el usuario es admin
+    const adminCheck = await requireAdmin()
+    if (adminCheck instanceof NextResponse) return adminCheck
 
     const body = await req.json()
     const { id, estado } = body
@@ -74,6 +60,17 @@ export async function PUT(req: NextRequest) {
       )
     }
 
+    // Validar estado
+    const estadosValidos = ['pendiente_pago', 'confirmada', 'cancelada', 'completada']
+    if (!estadosValidos.includes(estado)) {
+      return NextResponse.json(
+        { error: 'Estado no válido' },
+        { status: 400 }
+      )
+    }
+
+    console.log(`📝 Admin ${adminCheck.email} actualizando reserva ${id} a estado: ${estado}`)
+
     const { data, error } = await supabase
       .from('reservas')
       .update({ estado })
@@ -83,9 +80,20 @@ export async function PUT(req: NextRequest) {
 
     if (error) throw error
 
-    return NextResponse.json(data)
+    return NextResponse.json({
+      success: true,
+      data,
+    })
   } catch (error) {
     console.error('Error updating reserva:', error)
+
+    if (error instanceof AppError) {
+      return NextResponse.json(
+        { error: error.message, code: error.code },
+        { status: error.statusCode }
+      )
+    }
+
     return NextResponse.json(
       { error: 'Error al actualizar reserva' },
       { status: 500 }

@@ -3,9 +3,19 @@ import { Session } from '@clerk/nextjs/server'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
+}
+
+// Logging para debug (solo en desarrollo)
+if (process.env.NODE_ENV !== 'production') {
+  console.log('🔍 Supabase config:', {
+    url: supabaseUrl ? '✅' : '❌',
+    anonKey: supabaseAnonKey ? '✅' : '❌',
+    serviceKey: supabaseServiceKey ? '✅ CONFIGURADA' : '❌ FALTA'
+  })
 }
 
 /**
@@ -13,6 +23,20 @@ if (!supabaseUrl || !supabaseAnonKey) {
  * Usar solo para lectura de datos públicos
  */
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+
+/**
+ * Cliente de servicio con privilegios completos (bypasea RLS)
+ * ⚠️ SOLO USAR EN SERVIDOR - Tiene acceso total a la BD
+ * Usar para operaciones server-side después de validar autenticación con Clerk
+ */
+export const supabaseAdmin = supabaseServiceKey 
+  ? createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+  : supabase // Fallback al cliente público si no hay service key
 
 /**
  * Crea un cliente de Supabase con autenticación de Clerk

@@ -69,8 +69,98 @@ const generateConfirmacionHTML = (reserva: Reserva, experiencia: Experiencia, no
     </tr>
     <tr>
       <td style="background-color: #f6f4f2; padding: 20px; text-align: center; border-top: 1px solid #e5e5e5;">
-        <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">¿Necesitas ayuda? Contáctanos en <a href="mailto:soporte@confiatour.com" style="color: #23A69A;">soporte@confiatour.com</a></p>
+        <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">¿Necesitas ayuda? Contáctanos en <a href="mailto:soporte@confiatour.cl" style="color: #23A69A;">soporte@confiatour.cl</a></p>
         <p style="margin: 0; font-size: 12px; color: #999;">© 2025 ConfiaTour. Plataforma de Turismo Regional Colaborativo.</p>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+  `
+}
+
+const generateCancelacionAdminHTML = (reserva: Reserva, experiencia: Experiencia, nombreUsuario: string, emailUsuario: string) => {
+  const fechaExperiencia = new Date(reserva.fecha_experiencia).toLocaleDateString('es-CL', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+
+  const fechaCancelacion = new Date(reserva.fecha_cancelacion || new Date()).toLocaleDateString('es-CL', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"></head>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; background-color: #f6f4f2; margin: 0; padding: 20px;">
+  <table style="width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+    <tr>
+      <td style="background-color: #ff6b6b; padding: 30px 20px; text-align: center;">
+        <h1 style="color: #ffffff; margin: 0; font-size: 28px;">⚠️ Cancelación de Reserva</h1>
+        <p style="color: #ffffff; margin: 10px 0 0 0; font-size: 16px;">Se requiere procesamiento de reembolso</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 30px 20px;">
+        <h2 style="color: #ff6b6b; margin-top: 0;">Nueva Cancelación</h2>
+        <p style="font-size: 16px;">Un usuario ha cancelado su reserva. Se requiere procesar el reembolso manualmente.</p>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 0 20px 20px 20px;">
+        <div style="background-color: #fff3cd; padding: 20px; border-radius: 8px; border: 1px solid #ffc107;">
+          <h3 style="color: #856404; margin-top: 0;">💳 Datos de Reembolso</h3>
+          <p><strong>Monto a reembolsar:</strong> $${reserva.precio_total.toLocaleString()} CLP</p>
+          <p><strong>Método de pago:</strong> ${reserva.metodo_pago === 'transbank' ? 'Transbank' : 'MercadoPago'}</p>
+          ${reserva.codigo_autorizacion ? `<p><strong>Código autorización:</strong> ${reserva.codigo_autorizacion}</p>` : ''}
+          <p><strong>Buy Order:</strong> ${reserva.buy_order || 'N/A'}</p>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 0 20px 20px 20px;">
+        <div style="background-color: #f6f4f2; padding: 20px; border-radius: 8px; border: 1px solid #e5e5e5;">
+          <h3 style="color: #23A69A; margin-top: 0;">Detalles de la Reserva</h3>
+          <p><strong>ID Reserva:</strong> ${reserva.id}</p>
+          <p><strong>Experiencia:</strong> ${experiencia.titulo}</p>
+          <p><strong>Fecha experiencia:</strong> ${fechaExperiencia}</p>
+          <p><strong>Personas:</strong> ${reserva.cantidad_personas}</p>
+          <p><strong>Fecha cancelación:</strong> ${fechaCancelacion}</p>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 0 20px 20px 20px;">
+        <div style="background-color: #e7f3ff; padding: 20px; border-radius: 8px; border: 1px solid #007bff;">
+          <h3 style="color: #004085; margin-top: 0;">👤 Datos del Usuario</h3>
+          <p><strong>Nombre:</strong> ${nombreUsuario}</p>
+          <p><strong>Email:</strong> ${emailUsuario}</p>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 0 20px 30px 20px;">
+        <div style="background-color: #d1ecf1; padding: 15px; border-radius: 8px; border-left: 4px solid #0c5460;">
+          <p style="margin: 0; color: #0c5460;"><strong>📌 Acción Requerida:</strong> Procesa el reembolso en Transbank y marca la transacción como reembolsada en el sistema.</p>
+        </div>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 0 20px 30px 20px; text-align: center;">
+        <a href="${process.env.NEXT_PUBLIC_URL || 'http://localhost:3000'}/admin/reservas" style="display: inline-block; background-color: #ff6b6b; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-size: 16px; font-weight: bold;">Ver en Panel Admin</a>
+      </td>
+    </tr>
+    <tr>
+      <td style="padding: 20px; text-align: center; color: #999; font-size: 12px;">
+        <p style="margin: 0;">© 2024 ConfiaTour - Sistema de Notificaciones Administrativas</p>
       </td>
     </tr>
   </table>
@@ -130,7 +220,7 @@ const generateCancelacionHTML = (reserva: Reserva, experiencia: Experiencia, nom
     </tr>
     <tr>
       <td style="background-color: #f6f4f2; padding: 20px; text-align: center; border-top: 1px solid #e5e5e5;">
-        <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">¿Necesitas ayuda? Contáctanos en <a href="mailto:soporte@confiatour.com" style="color: #23A69A;">soporte@confiatour.com</a></p>
+        <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">¿Necesitas ayuda? Contáctanos en <a href="mailto:soporte@confiatour.cl" style="color: #23A69A;">soporte@confiatour.cl</a></p>
         <p style="margin: 0; font-size: 12px; color: #999;">© 2025 ConfiaTour.</p>
       </td>
     </tr>
@@ -229,10 +319,10 @@ export class EmailService {
   async sendReservaCancellation(data: ReservaEmailData): Promise<void> {
     try {
       const { reserva, experiencia, usuario } = data
-
-      const emailHtml = generateCancelacionHTML(reserva, experiencia, usuario.nombre)
-
       const resendClient = await getResend()
+
+      // 1. Email al usuario
+      const emailHtml = generateCancelacionHTML(reserva, experiencia, usuario.nombre)
       await resendClient.emails.send({
         from: FROM_EMAIL,
         to: usuario.email,
@@ -241,6 +331,19 @@ export class EmailService {
       })
 
       console.log(`✅ Email de cancelación enviado a ${usuario.email}`)
+
+      // 2. Email al admin para procesar reembolso
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAILS || 'admin@confiatour.cl'
+      const adminHtml = generateCancelacionAdminHTML(reserva, experiencia, usuario.nombre, usuario.email)
+      
+      await resendClient.emails.send({
+        from: FROM_EMAIL,
+        to: adminEmail,
+        subject: `⚠️ [ADMIN] Reembolso Requerido - Reserva ${reserva.id.substring(0, 8)}`,
+        html: adminHtml,
+      })
+
+      console.log(`✅ Notificación de reembolso enviada al admin: ${adminEmail}`)
     } catch (error) {
       console.error('❌ Error enviando email de cancelación:', error)
     }

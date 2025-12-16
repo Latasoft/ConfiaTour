@@ -3,8 +3,9 @@ import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { getExperienciaById, getResenasByExperiencia, crearReserva, crearResena } from '../../../lib/experiencias'
+import { getExperienciaById, getResenasByExperiencia, crearResena } from '../../../lib/experiencias'
 import { initMercadoPago, Wallet } from '@mercadopago/sdk-react'
+import { ReservasAPI } from '../../../lib/api/reservas'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,6 +34,7 @@ export default function DetalleExperienciaPage() {
   const [resenas, setResenas] = useState([])
   const [loading, setLoading] = useState(true)
   const [cantidadPersonas, setCantidadPersonas] = useState(1)
+  const [fechaReserva, setFechaReserva] = useState('') // Nueva fecha de reserva
   const [showReservaModal, setShowReservaModal] = useState(false)
   const [procesandoPago, setProcesandoPago] = useState(false)
   
@@ -72,6 +74,12 @@ export default function DetalleExperienciaPage() {
       return
     }
 
+    // Validar que se seleccionó una fecha
+    if (!fechaReserva) {
+      alert('Por favor selecciona una fecha para tu reserva')
+      return
+    }
+
     try {
       setProcesandoPago(true)
 
@@ -91,27 +99,35 @@ export default function DetalleExperienciaPage() {
       const buyOrder = `ORD${Date.now()}${Math.random().toString(36).substring(2, 8).toUpperCase()}`
       const sessionId = `SES${Date.now()}${Math.random().toString(36).substring(2, 15).toUpperCase()}`
 
-      // Crear reserva directamente en CLP
-      const reservaData = {
-        experiencia_id: experiencia.id,
-        usuario_id: user.id,
-        fecha_reserva: new Date().toISOString(),
-        fecha_experiencia: experiencia.fecha_inicio,
+      // ✅ Crear reserva usando la nueva API segura
+      // El usuario_id se obtiene automáticamente de la sesión de Clerk en el servidor
+      console.log('📝 Creando reserva vía API segura...')
+      console.log('📋 Datos a enviar:', {
+        experiencia_id: id, // Usar el ID de la URL (useParams)
+        fecha_experiencia: fechaReserva,
         cantidad_personas: cantidadPersonas,
-        precio_total: totalCLP, // Todo en CLP
-        estado: 'pendiente_pago',
+        precio_total: totalCLP,
         metodo_pago: 'transbank',
-        pagado: false,
         buy_order: buyOrder,
         session_id: sessionId
-      }
-
-      console.log('📝 Creando reserva:', reservaData)
-      const reservaCreada = await crearReserva(reservaData)
+      })
       
-      const returnUrl = `${window.location.origin}/transbank/return?reserva_id=${reservaCreada.id}&experiencia_id=${experiencia.id}`
+      const reservaCreada = await ReservasAPI.crear({
+        experiencia_id: id, // ✅ ID de la URL (siempre es UUID válido)
+        fecha_experiencia: fechaReserva, // Usar la fecha seleccionada por el usuario
+        cantidad_personas: cantidadPersonas,
+        precio_total: totalCLP, // Todo en CLP
+        metodo_pago: 'transbank',
+        buy_order: buyOrder,
+        session_id: sessionId
+      })
+      
+      console.log('✅ Reserva creada:', reservaCreada.id)
+      
+      const returnUrl = `${window.location.origin}/transbank/return?reserva_id=${reservaCreada.id}&experiencia_id=${id}`
 
       // Crear transacción en CLP
+      console.log('🏦 Creando transacción con Transbank...')
       const response = await fetch('/api/transbank/create', {
         method: 'POST',
         headers: {
@@ -138,7 +154,17 @@ export default function DetalleExperienciaPage() {
 
     } catch (error) {
       console.error('💥 Error procesando pago:', error)
-      alert(`Error al procesar el pago: ${error.message}`)
+      
+      // Manejo de errores mejorado
+      let errorMessage = 'Error al procesar el pago'
+      if (error.message.includes('No autorizado')) {
+        errorMessage = 'Debes iniciar sesión para hacer una reserva'
+        window.location.href = '/sign-in'
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
+      alert(errorMessage)
     } finally {
       setProcesandoPago(false)
       setShowReservaModal(false)
@@ -391,6 +417,24 @@ export default function DetalleExperienciaPage() {
                   </select>
                 </div>
 
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">
+                    Fecha de la experiencia
+                  </label>
+                  <input
+                    type="date"
+                    value={fechaReserva}
+                    onChange={(e) => setFechaReserva(e.target.value)}
+                    min={experiencia.fecha_inicio}
+                    max={experiencia.fecha_fin}
+                    className="w-full p-2 border border-gray-300 rounded-lg"
+                    required
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Disponible desde {new Date(experiencia.fecha_inicio).toLocaleDateString()} hasta {new Date(experiencia.fecha_fin).toLocaleDateString()}
+                  </p>
+                </div>
+
                 <div className="mb-4 p-3 bg-gray-50 rounded-lg">
                   <div className="flex justify-between">
                     <span>Total:</span>
@@ -402,7 +446,7 @@ export default function DetalleExperienciaPage() {
 
                 <button
                   onClick={() => setShowReservaModal(true)}
-                  disabled={procesandoPago}
+                  disabled={procesandoPago || !fechaReserva}
                   className="w-full bg-[#23A69A] text-white py-3 rounded-lg hover:bg-[#1e8a7e] transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {procesandoPago ? (
@@ -410,6 +454,8 @@ export default function DetalleExperienciaPage() {
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
                       Procesando...
                     </div>
+                  ) : !fechaReserva ? (
+                    'Selecciona una fecha'
                   ) : (
                     'Reservar Ahora'
                   )}
@@ -434,6 +480,7 @@ export default function DetalleExperienciaPage() {
             </p>
             <div className="mb-4 p-3 bg-gray-50 rounded">
               <p><strong>Experiencia:</strong> {experiencia.titulo}</p>
+              <p><strong>Fecha:</strong> {fechaReserva ? new Date(fechaReserva).toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'No seleccionada'}</p>
               <p><strong>Cantidad:</strong> {cantidadPersonas} persona{cantidadPersonas > 1 ? 's' : ''}</p>
               <p><strong>Total a pagar:</strong> ${(precioCLP * cantidadPersonas).toLocaleString()} CLP</p>
               <p className="text-sm text-gray-600 mt-2">Pago procesado con Transbank</p>

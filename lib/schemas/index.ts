@@ -21,22 +21,24 @@ export const experienciaCreateSchema = experienciaSchema.extend({
 
 // Schema para Reservas
 export const reservaSchema = z.object({
-  experiencia_id: z.string().uuid('ID de experiencia inválido'),
+  experiencia_id: z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, 'ID de experiencia inválido'),
   usuario_id: z.string().min(1, 'Usuario ID requerido'),
   fecha_experiencia: z.string(),
   cantidad_personas: z.number().int().positive().min(1).max(50),
   precio_total: z.number().positive(),
   metodo_pago: z.enum(['transbank', 'mercadopago']),
+  buy_order: z.string().regex(/^[a-zA-Z0-9]{1,26}$/, 'Buy order debe ser alfanumérico, máximo 26 caracteres').optional(),
+  session_id: z.string().regex(/^[a-zA-Z0-9]{1,61}$/, 'Session ID debe ser alfanumérico, máximo 61 caracteres').optional(),
 })
 
 export const reservaCancelSchema = z.object({
-  reserva_id: z.string().uuid(),
+  reserva_id: z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, 'ID de reserva inválido'),
   usuario_id: z.string().min(1),
 })
 
 // Schema para Reseñas
 export const resenaSchema = z.object({
-  experiencia_id: z.string().uuid(),
+  experiencia_id: z.string().regex(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i, 'ID de experiencia inválido'),
   usuario_id: z.string().min(1),
   rating: z.number().int().min(1).max(5),
   comentario: z.string().min(10, 'El comentario debe tener al menos 10 caracteres').max(1000),

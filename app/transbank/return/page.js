@@ -23,8 +23,16 @@ function TransbankReturnContent() {
         
         console.log('📊 Parámetros recibidos:', { token, reservaId, experienciaId })
 
+        // Si el usuario canceló el pago (no hay token)
         if (!token) {
-          throw new Error('Token no encontrado en la respuesta')
+          setResultado({
+            exitoso: false,
+            cancelado: true,
+            reservaId,
+            experienciaId
+          })
+          setLoading(false)
+          return
         }
 
         console.log('🚀 Llamando API de confirmación...')
@@ -123,8 +131,15 @@ function TransbankReturnContent() {
       // Redirigir a página de confirmación o mis reservas
       router.push('/mis-reservas')
     } else {
-      // Volver a la experiencia
-      router.push(`/experiencias/${resultado?.experienciaId}`)
+      // Si hay reserva_id, ir a mis-reservas para completar pago
+      // Si no, volver a la experiencia
+      if (resultado?.reservaId) {
+        router.push('/mis-reservas')
+      } else if (resultado?.experienciaId) {
+        router.push(`/experiencias/${resultado.experienciaId}`)
+      } else {
+        router.push('/experiencias')
+      }
     }
   }
 
@@ -151,7 +166,27 @@ function TransbankReturnContent() {
             onClick={handleContinuar}
             className="bg-[#23A69A] text-white px-6 py-3 rounded-lg hover:bg-[#1e8a7e] transition-colors"
           >
-            Intentar Nuevamente
+            Volver
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  // Si el pago fue cancelado por el usuario
+  if (resultado?.cancelado) {
+    return (
+      <div className="min-h-screen bg-[#f6f4f2] flex items-center justify-center">
+        <div className="bg-white p-8 rounded-lg shadow-md text-center max-w-md">
+          <div className="text-yellow-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-xl font-bold text-yellow-600 mb-4">Pago Cancelado</h2>
+          <p className="text-gray-600 mb-4">Cancelaste el proceso de pago.</p>
+          <p className="text-gray-600 mb-6">Tu reserva queda pendiente. Puedes completar el pago desde "Mis Reservas".</p>
+          <button
+            onClick={handleContinuar}
+            className="bg-[#23A69A] text-white px-6 py-3 rounded-lg hover:bg-[#1e8a7e] transition-colors w-full"
+          >
+            Ir a Mis Reservas
           </button>
         </div>
       </div>
