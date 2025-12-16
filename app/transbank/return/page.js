@@ -181,7 +181,7 @@ function TransbankReturnContent() {
           <div className="text-yellow-500 text-6xl mb-4">⚠️</div>
           <h2 className="text-xl font-bold text-yellow-600 mb-4">Pago Cancelado</h2>
           <p className="text-gray-600 mb-4">Cancelaste el proceso de pago.</p>
-          <p className="text-gray-600 mb-6">Tu reserva queda pendiente. Puedes completar el pago desde "Mis Reservas".</p>
+          <p className="text-gray-600 mb-6">Tu reserva queda pendiente. Puedes completar el pago desde &quot;Mis Reservas&quot;.</p>
           <button
             onClick={handleContinuar}
             className="bg-[#23A69A] text-white px-6 py-3 rounded-lg hover:bg-[#1e8a7e] transition-colors w-full"
