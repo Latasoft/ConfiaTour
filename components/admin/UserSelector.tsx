@@ -88,7 +88,7 @@ export const UserSelector: React.FC<UserSelectorProps> = ({
       value={value}
       onChange={(e) => onChange(e.target.value)}
       disabled={disabled || users.length === 0}
-      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed text-gray-900"
       required
     >
       <option value="">Selecciona un usuario</option>

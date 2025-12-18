@@ -225,29 +225,7 @@ export default function ComoFuncionaPage() {
             </div>
           </div>
 
-          {/* Políticas de cancelación */}
-          <div className="bg-white p-10 rounded-2xl shadow-xl">
-            <h2 className="text-3xl font-bold mb-8 text-center text-[#23A69A]">
-              Políticas de Cancelación Flexibles
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="text-center p-6 border-2 border-green-200 rounded-xl">
-                <div className="text-green-600 text-2xl font-bold mb-2">Flexible</div>
-                <div className="text-sm text-gray-600 mb-4">Reembolso completo hasta 24h antes</div>
-                <div className="text-xs text-gray-500">Ideal para planes espontáneos</div>
-              </div>
-              <div className="text-center p-6 border-2 border-yellow-200 rounded-xl">
-                <div className="text-yellow-600 text-2xl font-bold mb-2">Moderada</div>
-                <div className="text-sm text-gray-600 mb-4">Reembolso completo hasta 5 días antes</div>
-                <div className="text-xs text-gray-500">Balance entre flexibilidad y planificación</div>
-              </div>
-              <div className="text-center p-6 border-2 border-red-200 rounded-xl">
-                <div className="text-red-600 text-2xl font-bold mb-2">Estricta</div>
-                <div className="text-sm text-gray-600 mb-4">Reembolso 50% hasta 7 días antes</div>
-                <div className="text-xs text-gray-500">Para experiencias con alta demanda</div>
-              </div>
-            </div>
-          </div>
+          
         </div>
       </main>
     </div>

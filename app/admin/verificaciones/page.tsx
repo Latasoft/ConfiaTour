@@ -127,7 +127,7 @@ export default function AdminVerificacionesPage() {
 
       await fetchVerificationRequests()
       closeModal()
-      success('✅ Solicitud aprobada exitosamente. El usuario es ahora un guía verificado.')
+      success('Solicitud aprobada exitosamente. El usuario es ahora un guía verificado.')
     } catch (error) {
       console.error('Error approving request:', error)
       showError('Error al aprobar la solicitud')

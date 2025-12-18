@@ -2,7 +2,9 @@
 
 import { useState } from 'react'
 import Image from 'next/image'
+import { useSession } from '@clerk/nextjs'
 import { uploadMultipleImages, deleteImage } from '@/lib/uploadImages'
+import { createClerkSupabaseClient } from '@/lib/supabaseClient'
 
 export interface ImageData {
   url: string
@@ -24,6 +26,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
   maxImages = 10,
   disabled = false
 }) => {
+  const { session } = useSession()
   const [uploading, setUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState('')
 
@@ -41,7 +44,10 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       setUploading(true)
       setUploadProgress(`Subiendo ${files.length} imagen(es)...`)
 
-      const uploadedImages = await uploadMultipleImages(files, userId)
+      // Crear cliente autenticado de Supabase con token de Clerk
+      const authenticatedSupabase = await createClerkSupabaseClient(session)
+
+      const uploadedImages = await uploadMultipleImages(files, userId, 'experiencias', authenticatedSupabase)
       
       const newImages: ImageData[] = uploadedImages.map(img => ({
         url: img.url,

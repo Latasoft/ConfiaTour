@@ -1,6 +1,6 @@
 'use client'
 import { useState, useEffect } from 'react'
-import { useUser } from '@clerk/nextjs'
+import { useUser, useSession } from '@clerk/nextjs'
 import { useParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { getExperienciaById, getResenasByExperiencia, crearResena } from '../../../lib/experiencias'
@@ -29,6 +29,7 @@ export default function DetalleExperienciaPage() {
   initMercadoPago('APP_USR-042e0ef9-c8c0-4b1b-bdf7-de8f207b5fbf')
   const { id } = useParams()
   const { user } = useUser()
+  const { session } = useSession()
   const router = useRouter()
   const [experiencia, setExperiencia] = useState(null)
   const [resenas, setResenas] = useState([])
@@ -192,7 +193,7 @@ export default function DetalleExperienciaPage() {
         creado_en: new Date().toISOString()
       }
 
-      await crearResena(resenaData)
+      await crearResena(resenaData, session)
       
       const resenasActualizadas = await getResenasByExperiencia(id)
       setResenas(resenasActualizadas)

@@ -95,7 +95,7 @@ export const CreateExperienciaModal: React.FC<CreateExperienciaModalProps> = ({
 
       const nuevaExperiencia = await experienciaAdminAPI.crear(data)
 
-      alert('✅ Experiencia creada exitosamente')
+      alert('Experiencia creada exitosamente')
       onSuccess(nuevaExperiencia)
       handleClose()
 
@@ -177,7 +177,7 @@ export const CreateExperienciaModal: React.FC<CreateExperienciaModalProps> = ({
               required
               minLength={5}
               maxLength={200}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent text-gray-900"
               placeholder="Ej: Tour por el Casco Antiguo"
             />
           </div>
@@ -195,7 +195,7 @@ export const CreateExperienciaModal: React.FC<CreateExperienciaModalProps> = ({
               minLength={20}
               maxLength={5000}
               rows={4}
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent text-gray-900"
               placeholder="Describe la experiencia en detalle..."
             />
           </div>
@@ -211,7 +211,7 @@ export const CreateExperienciaModal: React.FC<CreateExperienciaModalProps> = ({
                 onChange={(e) => handleChange('categoria', e.target.value)}
                 disabled={loading}
                 required
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent text-gray-900"
               >
                 <option value="">Selecciona categoría</option>
                 {CATEGORIAS.map(cat => (
@@ -232,7 +232,7 @@ export const CreateExperienciaModal: React.FC<CreateExperienciaModalProps> = ({
                 onChange={(e) => handleChange('ubicacion', e.target.value)}
                 disabled={loading}
                 required
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent text-gray-900"
                 placeholder="Ej: Centro Histórico, Santiago"
               />
             </div>
@@ -252,7 +252,7 @@ export const CreateExperienciaModal: React.FC<CreateExperienciaModalProps> = ({
                 required
                 min={0}
                 step={0.01}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent text-gray-900"
               />
             </div>
 
@@ -265,7 +265,7 @@ export const CreateExperienciaModal: React.FC<CreateExperienciaModalProps> = ({
                 onChange={(e) => handleChange('moneda', e.target.value)}
                 disabled={loading}
                 required
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent text-gray-900"
               >
                 {MONEDAS.map(moneda => (
                   <option key={moneda.code} value={moneda.code}>
@@ -287,7 +287,7 @@ export const CreateExperienciaModal: React.FC<CreateExperienciaModalProps> = ({
                 required
                 min={1}
                 max={100}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent text-gray-900"
               />
             </div>
           </div>
@@ -303,7 +303,7 @@ export const CreateExperienciaModal: React.FC<CreateExperienciaModalProps> = ({
               onChange={(e) => handleChange('duracion', e.target.value)}
               disabled={loading}
               required
-              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent text-gray-900"
               placeholder="Ej: 3 horas, 1 día, 2 días 1 noche"
             />
           </div>
@@ -319,7 +319,7 @@ export const CreateExperienciaModal: React.FC<CreateExperienciaModalProps> = ({
                 value={formData.fecha_inicio}
                 onChange={(e) => handleChange('fecha_inicio', e.target.value)}
                 disabled={loading}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent text-gray-900"
               />
             </div>
 
@@ -332,7 +332,7 @@ export const CreateExperienciaModal: React.FC<CreateExperienciaModalProps> = ({
                 value={formData.fecha_fin}
                 onChange={(e) => handleChange('fecha_fin', e.target.value)}
                 disabled={loading}
-                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent"
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent text-gray-900"
               />
             </div>
           </div>

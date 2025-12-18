@@ -285,7 +285,7 @@ function MisReservasContent() {
             </div>
           ) : reservasFiltradas.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-gray-400 text-6xl mb-4">📋</div>
+              <div className="text-gray-400 text-6xl mb-4"></div>
               <h3 className="text-xl font-semibold text-gray-600 mb-2">
                 {filtro === 'todas' ? 'No tienes reservas aún' : `No tienes reservas ${filtro}`}
               </h3>

@@ -15,7 +15,8 @@ export class ExperienciaAdminService {
   private repository: ExperienciaRepository
 
   constructor(repository?: ExperienciaRepository) {
-    this.repository = repository || new ExperienciaRepository()
+    // Pasar supabaseAdmin al repository para bypasear RLS
+    this.repository = repository || new ExperienciaRepository(supabaseAdmin)
   }
 
   /**

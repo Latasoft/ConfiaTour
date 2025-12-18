@@ -96,7 +96,7 @@ export const EditExperienciaModal: React.FC<EditExperienciaModalProps> = ({
         updateData
       )
 
-      alert('✅ Experiencia actualizada exitosamente')
+      alert('Experiencia actualizada exitosamente')
       onSuccess(experienciaActualizada)
       handleClose()
 

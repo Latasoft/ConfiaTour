@@ -9,6 +9,7 @@ import {
   UserButton,
   useUser,
 } from '@clerk/nextjs'
+import { supabase } from '@/lib/supabaseClient'
 
 // Obtener emails de admin desde variable de entorno
 const getAdminEmails = () => {
@@ -22,17 +23,40 @@ const ADMIN_EMAILS = getAdminEmails()
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [userProfile, setUserProfile] = useState(null)
   const { user, isLoaded } = useUser()
 
-  // Verificar si el usuario es admin
+  // Verificar si el usuario es admin y obtener perfil
   useEffect(() => {
     if (isLoaded && user) {
       const userEmail = user.emailAddresses[0]?.emailAddress?.toLowerCase()
       setIsAdmin(userEmail ? ADMIN_EMAILS.includes(userEmail) : false)
+      
+      // Obtener perfil del usuario
+      fetchUserProfile()
     } else {
       setIsAdmin(false)
+      setUserProfile(null)
     }
   }, [isLoaded, user])
+
+  const fetchUserProfile = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('user_type, verified')
+        .eq('clerk_user_id', user.id)
+        .maybeSingle()
+
+      if (data) {
+        setUserProfile(data)
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error)
+    }
+  }
+
+  const isVerifiedGuide = userProfile?.user_type === 'guia' && userProfile?.verified
 
   // Enlaces de navegación públicos
   const publicNavLinks = [
@@ -75,12 +99,28 @@ export default function Navbar() {
               <Link href="/mis-reservas" className="text-gray-700 hover:text-[#23A69A] transition-colors">
                 Mis Reservas
               </Link>
+              
+              {/* Enlace "Ser Guía" para usuarios viajeros */}
+              {userProfile?.user_type === 'viajero' && (
+                <Link href="/perfil/verificar" className="text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-lg transition-colors font-medium">
+                  Ser Guía
+                </Link>
+              )}
+              
+              {/* Enlace "Crear Experiencia" para guías verificados */}
+              {isVerifiedGuide && (
+                <Link href="/experiencias/crear" className="text-white bg-[#23A69A] hover:bg-[#1d8a80] px-3 py-1.5 rounded-lg transition-colors font-medium">
+                  Crear Experiencia
+                </Link>
+              )}
+              
               <Link href="/perfil" className="text-gray-700 hover:text-[#23A69A] transition-colors">
                 Mi Perfil
               </Link>
+              
               {/* Enlace de Admin - solo visible para admins */}
               {isAdmin && (
-                <Link href="/admin" className="text-white bg-[#23A69A] hover:bg-[#1d8a80] px-3 py-1.5 rounded-lg transition-colors font-medium">
+                <Link href="/admin" className="text-white bg-purple-600 hover:bg-purple-700 px-3 py-1.5 rounded-lg transition-colors font-medium">
                   Panel Admin
                 </Link>
               )}
@@ -146,11 +186,34 @@ export default function Navbar() {
                     {link.label}
                   </Link>
                 ))}
+                
+                {/* Enlace "Ser Guía" para usuarios viajeros */}
+                {userProfile?.user_type === 'viajero' && (
+                  <Link
+                    href="/perfil/verificar"
+                    className="px-3 py-2 rounded-xl bg-green-600 text-white hover:bg-green-700 transition-colors font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Ser Guía
+                  </Link>
+                )}
+                
+                {/* Enlace "Crear Experiencia" para guías verificados */}
+                {isVerifiedGuide && (
+                  <Link
+                    href="/experiencias/crear"
+                    className="px-3 py-2 rounded-xl bg-[#23A69A] text-white hover:bg-[#1d8a80] transition-colors font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Crear Experiencia
+                  </Link>
+                )}
+                
                 {/* Enlace de Admin - solo visible para admins */}
                 {isAdmin && (
                   <Link
                     href="/admin"
-                    className="px-3 py-2 rounded-xl bg-[#23A69A] text-white hover:bg-[#1d8a80] transition-colors font-medium"
+                    className="px-3 py-2 rounded-xl bg-purple-600 text-white hover:bg-purple-700 transition-colors font-medium"
                     onClick={() => setIsMenuOpen(false)}
                   >
                     Panel Admin

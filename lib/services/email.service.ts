@@ -377,7 +377,7 @@ const generateProveedorHTML = (providerName: string, reserva: Reserva, experienc
 
         <div style="background-color: #eff6ff; padding: 16px; border-radius: 8px; margin-top: 20px;">
           <p style="margin: 0; color: #1e40af; font-size: 14px;">
-            <strong>📋 Próximos pasos:</strong><br>
+            <strong>Próximos pasos:</strong><br>
             1. Confirma tu disponibilidad para la fecha<br>
             2. Prepara todo lo necesario para la experiencia<br>
             3. Contacta al cliente si necesitas coordinar detalles

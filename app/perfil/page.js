@@ -47,7 +47,7 @@ export default function PerfilPage() {
         .from('profiles')
         .select('*')
         .eq('clerk_user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         throw error;
