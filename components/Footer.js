@@ -124,7 +124,7 @@ export default function Footer() {
         <div className="border-t border-white/20 mt-12 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="text-white/60 text-sm mb-4 md:mb-0">
-              © 2024 ConfiaTour. Todos los derechos reservados.
+              © 2026 ConfiaTour. Todos los derechos reservados.
             </div>
             <div className="flex space-x-6 text-sm">
               <a href="/terminos" className="text-white/60 hover:text-white transition-colors duration-200">

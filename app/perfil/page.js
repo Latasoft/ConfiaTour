@@ -5,12 +5,17 @@ import { supabase } from '../../lib/supabaseClient';
 import Navbar from '../../components/Navbar';
 import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { useToast } from '@/lib/context/ToastContext';
 
 export const dynamic = 'force-dynamic'
 
 export default function PerfilPage() {
   const { user, isLoaded } = useUser();
+  const searchParams = useSearchParams();
+  const { success } = useToast();
   const [profile, setProfile] = useState(null);
+  const [verificationRequest, setVerificationRequest] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -23,8 +28,16 @@ export default function PerfilPage() {
   useEffect(() => {
     if (isLoaded && user) {
       fetchProfile();
+      fetchVerificationStatus();
     }
   }, [isLoaded, user]);
+
+  useEffect(() => {
+    // Mostrar mensaje de éxito si viene de enviar verificación
+    if (searchParams.get('verification') === 'submitted') {
+      success('Solicitud de verificación enviada correctamente. Te notificaremos cuando sea revisada.');
+    }
+  }, [searchParams, success]);
 
   const fetchProfile = async () => {
     try {
@@ -53,6 +66,27 @@ export default function PerfilPage() {
       console.error('Error fetching profile:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchVerificationStatus = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('verification_requests')
+        .select('*')
+        .eq('clerk_user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching verification:', error);
+        return;
+      }
+
+      setVerificationRequest(data);
+    } catch (error) {
+      console.error('Error fetching verification status:', error);
     }
   };
 
@@ -86,25 +120,46 @@ export default function PerfilPage() {
     setLoading(true);
 
     try {
+      // Primero verificar que el perfil existe
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('clerk_user_id', user.id)
+        .maybeSingle();
+
+      if (!existingProfile) {
+        // Si no existe, crear el perfil primero
+        await createProfile();
+        return;
+      }
+
+      // Actualizar el perfil existente
       const { data, error } = await supabase
         .from('profiles')
         .update({
           full_name: formData.full_name,
           bio: formData.bio,
           phone: formData.phone,
-          user_type: formData.user_type,
           updated_at: new Date().toISOString()
         })
         .eq('clerk_user_id', user.id)
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating profile:', error);
+        alert('Error al actualizar el perfil: ' + error.message);
+        return;
+      }
 
-      setProfile(data);
-      setEditing(false);
+      if (data) {
+        setProfile(data);
+        setEditing(false);
+        success('Perfil actualizado correctamente');
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
+      alert('Error inesperado: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -166,12 +221,12 @@ export default function PerfilPage() {
                       ? 'bg-yellow-400 text-yellow-900' 
                       : 'bg-blue-400 text-blue-900'
                   }`}>
-                    {profile?.user_type === 'guia' ? '🏛️ Guía Turístico' : '🎒 Viajero'}
+                    {profile?.user_type === 'guia' ? 'Guía Turístico' : 'Viajero'}
                   </span>
                   
                   {profile?.verified && (
                     <span className="px-3 py-1 bg-green-400 text-green-900 rounded-full text-sm font-medium">
-                      ✓ Verificado
+                      Verificado
                     </span>
                   )}
                 </div>
@@ -211,32 +266,113 @@ export default function PerfilPage() {
                     <h3 className="text-lg font-semibold text-gray-900 mb-3">Estado de la Cuenta</h3>
                     
                     <div className="space-y-3">
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <span className="text-sm font-medium text-gray-700">Estado de Verificación</span>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          profile?.verified 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-yellow-100 text-yellow-800'
-                        }`}>
-                          {profile?.verified ? 'Verificado' : 'Pendiente'}
-                        </span>
-                      </div>
-                      
-                      {!profile?.verified && (
-                        <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="text-sm font-medium text-blue-900">Verifica tu cuenta</p>
-                              <p className="text-xs text-blue-700 mt-1">
-                                Sube tu identificación para obtener la verificación
+                      {/* Estado de verificación para guías verificados */}
+                      {profile?.user_type === 'guia' && profile?.verified && (
+                        <div className="p-4 rounded-lg border-l-4 bg-green-50 border-green-500">
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0">
+                              <svg className="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                            <div className="ml-3 flex-1">
+                              <h4 className="text-sm font-semibold text-green-900">
+                                ✅ Guía Verificado
+                              </h4>
+                              <p className="text-sm mt-1 text-green-800">
+                                Tu cuenta está verificada. Puedes crear y publicar experiencias.
+                              </p>
+                              <Link
+                                href="/experiencias/crear"
+                                className="inline-block mt-3 bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+                              >
+                                Crear Experiencia
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Estado de verificación pendiente */}
+                      {profile?.user_type === 'guia' && !profile?.verified && verificationRequest?.status === 'pending' && (
+                        <div className="p-4 rounded-lg border-l-4 bg-yellow-50 border-yellow-500">
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0">
+                              <svg className="h-5 w-5 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                            <div className="ml-3 flex-1">
+                              <h4 className="text-sm font-semibold text-yellow-900">
+                                ⏳ Verificación en Proceso
+                              </h4>
+                              <p className="text-sm mt-1 text-yellow-800">
+                                Tu solicitud de verificación está siendo revisada por nuestro equipo. Te notificaremos cuando esté lista.
+                              </p>
+                              <p className="text-xs text-yellow-700 mt-2">
+                                Enviada el {new Date(verificationRequest.created_at).toLocaleDateString('es-CL', { day: 'numeric', month: 'long', year: 'numeric' })}
                               </p>
                             </div>
-                            <Link
-                              href="/perfil/verificar"
-                              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
-                            >
-                              Verificar
-                            </Link>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Verificación rechazada */}
+                      {verificationRequest?.status === 'rejected' && (
+                        <div className="p-4 rounded-lg border-l-4 bg-red-50 border-red-500">
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0">
+                              <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                            <div className="ml-3 flex-1">
+                              <h4 className="text-sm font-semibold text-red-900">
+                                ❌ Verificación Rechazada
+                              </h4>
+                              <p className="text-sm mt-1 text-red-800">
+                                Lamentablemente, tu solicitud no pudo ser aprobada.
+                              </p>
+                              {verificationRequest.rejection_reason && (
+                                <div className="mt-2 p-2 bg-white rounded border border-red-200">
+                                  <p className="text-xs font-semibold text-red-900 mb-1">Razón:</p>
+                                  <p className="text-xs text-red-800">{verificationRequest.rejection_reason}</p>
+                                </div>
+                              )}
+                              <Link
+                                href="/perfil/verificar"
+                                className="inline-block mt-3 bg-red-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+                              >
+                                Enviar Nueva Solicitud
+                              </Link>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* CTA para convertirse en guía (viajeros sin solicitud) */}
+                      {profile?.user_type === 'viajero' && !verificationRequest && (
+                        <div className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
+                          <div className="flex items-start">
+                            <div className="flex-shrink-0">
+                              <svg className="h-5 w-5 text-blue-500" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                              </svg>
+                            </div>
+                            <div className="ml-3 flex-1">
+                              <h4 className="text-sm font-semibold text-blue-900">
+                                ¿Quieres ofrecer experiencias?
+                              </h4>
+                              <p className="text-sm text-blue-800 mt-1">
+                                Conviértete en guía verificado y comparte tus servicios turísticos con viajeros de todo el mundo.
+                              </p>
+                              <Link
+                                href="/perfil/verificar"
+                                className="inline-block mt-3 bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+                              >
+                                Solicitar Verificación como Guía
+                              </Link>
+                            </div>
                           </div>
                         </div>
                       )}
@@ -299,21 +435,6 @@ export default function PerfilPage() {
                       placeholder="+56 9 1234 5678"
                     />
                   </div>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tipo de Usuario
-                  </label>
-                  <select
-                    name="user_type"
-                    value={formData.user_type}
-                    onChange={handleInputChange}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="viajero">Viajero</option>
-                    <option value="guia">Guía Turístico</option>
-                  </select>
                 </div>
 
                 <div>

@@ -1,3 +1,5 @@
+import { RoadIcon, ClockIcon, ShipIcon, FlagIcon } from './icons'
+
 export default function CorredorSection() {
   const countries = [
     {
@@ -39,31 +41,31 @@ export default function CorredorSection() {
   ]
 
   const corridorStats = [
-    { label: "Kilómetros de Extensión", value: "2,400 km", icon: "🛣️" },
-    { label: "Tiempo de Travesía", value: "5-7 días", icon: "⏱️" },
-    { label: "Puertos Conectados", value: "6 puertos", icon: "🚢" },
+    { label: "Kilómetros de Extensión", value: "2,400 km", icon: RoadIcon },
+    { label: "Tiempo de Travesía", value: "5-7 días", icon: ClockIcon },
+    { label: "Puertos Conectados", value: "6 puertos", icon: ShipIcon },
   ]
 
   const culturalAspects = [
     {
       aspect: "Gastronomía",
       description: "Desde empanadas salteñas hasta asado paraguayo",
-      countries: "🇦🇷🇨🇱🇵🇾🇧🇷"
+      countries: "AR · CL · PY · BR"
     },
     {
       aspect: "Música y Danza",
       description: "Folclore andino, cueca chilena y polka paraguaya",
-      countries: "🇦🇷🇨🇱🇵🇾"
+      countries: "AR · CL · PY"
     },
     {
       aspect: "Artesanías",
       description: "Tejidos andinos, cerámica y trabajos en cuero",
-      countries: "🇦🇷🇨🇱🇵🇾🇧🇷"
+      countries: "AR · CL · PY · BR"
     },
     {
       aspect: "Idiomas",
       description: "Español, portugués, guaraní y lenguas originarias",
-      countries: "🌍"
+      countries: "Multilingüe"
     }
   ]
 
@@ -85,7 +87,9 @@ export default function CorredorSection() {
           <div className="grid grid-cols-3 md:grid-cols-3 gap-4 mb-8">
             {corridorStats.map((stat, index) => (
               <div key={index} className="bg-white p-4 rounded-xl shadow-md">
-                <div className="text-2xl mb-2">{stat.icon}</div>
+                <div className="text-[#23A69A] mb-2 flex justify-center">
+                  <stat.icon className="w-8 h-8" />
+                </div>
                 <div className="font-bold text-lg text-[#1C1C1C]">{stat.value}</div>
                 <div className="text-xs text-gray-600">{stat.label}</div>
               </div>

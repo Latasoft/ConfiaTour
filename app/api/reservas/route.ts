@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { auth, currentUser } from '@clerk/nextjs/server'
+import { auth } from '@clerk/nextjs/server'
 import { reservaService } from '@/lib/services/reserva.service'
+import { ensureUserProfile } from '@/lib/utils/profile'
 import { AppError } from '@/lib/utils/errors'
 
 /**
@@ -18,49 +19,17 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // 2. Obtener datos del usuario
-    const user = await currentUser()
-    if (!user) {
-      return NextResponse.json(
-        { error: 'Usuario no encontrado' },
-        { status: 401 }
-      )
-    }
+    // 2. Asegurar que el perfil existe
+    await ensureUserProfile(userId)
 
-    // 3. Asegurar que el perfil existe en Supabase
-    const userEmail = user.emailAddresses[0]?.emailAddress
-    if (userEmail) {
-      const { supabaseAdmin } = await import('@/lib/db/supabase')
-      
-      // Verificar si el perfil existe
-      const { data: existingProfile } = await supabaseAdmin
-        .from('profiles')
-        .select('clerk_user_id')
-        .eq('clerk_user_id', userId)
-        .single()
+    // 2. Asegurar que el perfil existe
+    await ensureUserProfile(userId)
 
-      // Si no existe, crearlo
-      if (!existingProfile) {
-        console.log('👤 Creando perfil para usuario:', userId)
-        await supabaseAdmin
-          .from('profiles')
-          .insert({
-            clerk_user_id: userId,
-            email: userEmail,
-            full_name: user.fullName || user.firstName || 'Usuario',
-            avatar_url: user.imageUrl,
-            user_type: 'viajero',
-            verified: false
-          })
-        console.log('✅ Perfil creado')
-      }
-    }
-
-    // 4. Parsear body
+    // 3. Parsear body
     const body = await req.json()
     console.log('📦 Body recibido:', JSON.stringify(body, null, 2))
 
-    // 5. FORZAR usuario_id desde sesión (seguridad)
+    // 4. FORZAR usuario_id desde sesión (seguridad)
     const reservaData = {
       ...body,
       usuario_id: userId, // ✅ Siempre desde sesión autenticada
@@ -69,12 +38,12 @@ export async function POST(req: NextRequest) {
     console.log('📝 Datos de reserva (con usuario_id):', JSON.stringify(reservaData, null, 2))
     console.log('📝 Creando reserva para usuario:', userId)
 
-    // 6. Crear reserva (con validación automática)
+    // 5. Crear reserva (con validación automática)
     const reserva = await reservaService.crearReserva(reservaData)
 
     console.log('✅ Reserva creada:', reserva.id)
 
-    // 7. Responder
+    // 6. Responder
     return NextResponse.json(
       {
         success: true,

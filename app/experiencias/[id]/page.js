@@ -89,7 +89,7 @@ export default function DetalleExperienciaPage() {
       const precioCLP = convertToCLP(precioOriginal, monedaOriginal)
       const totalCLP = precioCLP * cantidadPersonas
       
-      console.log('💰 Pago automático en CLP:', {
+      console.log('[DEBUG] Pago automático en CLP:', {
         original: `${precioOriginal} ${monedaOriginal}`,
         convertido: `${precioCLP} CLP`,
         total: `${totalCLP} CLP`

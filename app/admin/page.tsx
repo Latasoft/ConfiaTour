@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { StatCard } from '@/components/admin/StatCard'
-import { statsService } from '@/lib/services/stats.service'
 import { AdminStats } from '@/types'
+import { CalendarIcon, CurrencyDollarIcon, TargetIcon, UserGroupIcon } from '@/components/icons'
 
 export const dynamic = 'force-dynamic'
 
@@ -19,7 +19,13 @@ export default function AdminDashboard() {
   const loadStats = async () => {
     try {
       setLoading(true)
-      const data = await statsService.getAllStats()
+      const response = await fetch('/api/admin/stats')
+      
+      if (!response.ok) {
+        throw new Error('Error al cargar estadísticas')
+      }
+      
+      const data = await response.json()
       setStats(data)
     } catch (err: any) {
       console.error('Error cargando estadísticas:', err)
@@ -57,48 +63,48 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard Administrativo</h1>
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Dashboard Administrativo</h1>
         <p className="text-gray-600 mt-2">Resumen general de la plataforma ConfiaTour</p>
       </div>
 
       {/* KPIs Principales */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
         <StatCard
           title="Total Reservas"
           value={stats.reservas.total}
-          icon="📅"
+          icon={CalendarIcon}
           subtitle={`${stats.reservas.confirmadas} confirmadas`}
           color="info"
         />
         <StatCard
           title="Ingresos Totales"
           value={`$${stats.ingresos.total.toLocaleString()}`}
-          icon="💰"
+          icon={CurrencyDollarIcon}
           subtitle="CLP"
           color="success"
         />
         <StatCard
           title="Experiencias Activas"
           value={stats.experiencias.activas}
-          icon="🎯"
+          icon={TargetIcon}
           subtitle={`de ${stats.experiencias.total} totales`}
           color="primary"
         />
         <StatCard
           title="Usuarios Totales"
           value={stats.usuarios.total}
-          icon="👥"
+          icon={UserGroupIcon}
           subtitle={`${stats.usuarios.verificados} verificados`}
           color="info"
         />
       </div>
 
       {/* Estadísticas Detalladas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6 sm:mb-8">
         {/* Reservas por Estado */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-bold mb-4">Reservas por Estado</h3>
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-bold mb-4">Reservas por Estado</h3>
           <div className="space-y-3">
             {[
               { label: 'Confirmadas', value: stats.reservas.confirmadas, color: 'bg-green-500' },
@@ -129,8 +135,8 @@ export default function AdminDashboard() {
         </div>
 
         {/* Categorías Populares */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h3 className="text-lg font-bold mb-4">Experiencias por Categoría</h3>
+        <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-bold mb-4">Experiencias por Categoría</h3>
           <div className="space-y-3">
             {Object.entries(stats.experiencias.por_categoria)
               .filter(([_, count]) => count > 0)

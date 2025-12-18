@@ -48,23 +48,23 @@ export const ReservaConfirmacion: React.FC<ReservaConfirmacionProps> = ({
                 
                 <table style={{ width: '100%', fontSize: '14px' }}>
                   <tr>
-                    <td style={{ padding: '8px 0', color: '#666', width: '40%' }}>📅 Fecha:</td>
+                    <td style={{ padding: '8px 0', color: '#666', width: '40%' }}>Fecha:</td>
                     <td style={{ padding: '8px 0', fontWeight: 'bold' }}>{fechaExperiencia}</td>
                   </tr>
                   <tr>
-                    <td style={{ padding: '8px 0', color: '#666' }}>📍 Ubicación:</td>
+                    <td style={{ padding: '8px 0', color: '#666' }}>Ubicación:</td>
                     <td style={{ padding: '8px 0', fontWeight: 'bold' }}>{experiencia.ubicacion}</td>
                   </tr>
                   <tr>
-                    <td style={{ padding: '8px 0', color: '#666' }}>👥 Personas:</td>
+                    <td style={{ padding: '8px 0', color: '#666' }}>Personas:</td>
                     <td style={{ padding: '8px 0', fontWeight: 'bold' }}>{reserva.cantidad_personas}</td>
                   </tr>
                   <tr>
-                    <td style={{ padding: '8px 0', color: '#666' }}>⏱️ Duración:</td>
+                    <td style={{ padding: '8px 0', color: '#666' }}>Duración:</td>
                     <td style={{ padding: '8px 0', fontWeight: 'bold' }}>{experiencia.duracion}</td>
                   </tr>
                   <tr>
-                    <td style={{ padding: '8px 0', color: '#666' }}>🏷️ Categoría:</td>
+                    <td style={{ padding: '8px 0', color: '#666' }}>Categoría:</td>
                     <td style={{ padding: '8px 0', fontWeight: 'bold', textTransform: 'capitalize' }}>{experiencia.categoria}</td>
                   </tr>
                 </table>
@@ -76,7 +76,7 @@ export const ReservaConfirmacion: React.FC<ReservaConfirmacionProps> = ({
           <tr>
             <td style={{ padding: '0 20px 20px 20px' }}>
               <div style={{ backgroundColor: '#e8f5f4', padding: '20px', borderRadius: '8px', border: '1px solid #23A69A' }}>
-                <h3 style={{ color: '#23A69A', marginTop: 0, fontSize: '18px' }}>💰 Información de Pago</h3>
+                <h3 style={{ color: '#23A69A', marginTop: 0, fontSize: '18px' }}>Información de Pago</h3>
                 
                 <table style={{ width: '100%', fontSize: '14px' }}>
                   <tr>
@@ -109,7 +109,7 @@ export const ReservaConfirmacion: React.FC<ReservaConfirmacionProps> = ({
             <td style={{ padding: '0 20px 20px 20px' }}>
               <div style={{ backgroundColor: '#fff3cd', padding: '15px', borderRadius: '8px', border: '1px solid #ffc107' }}>
                 <p style={{ margin: 0, fontSize: '14px', color: '#856404' }}>
-                  <strong>⚠️ Importante:</strong> Recuerda que puedes cancelar tu reserva hasta 24 horas antes de la fecha de la experiencia.
+                  <strong>Importante:</strong> Recuerda que puedes cancelar tu reserva hasta 24 horas antes de la fecha de la experiencia.
                 </p>
               </div>
             </td>

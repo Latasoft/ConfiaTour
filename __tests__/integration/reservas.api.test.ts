@@ -150,7 +150,7 @@ describe('API /api/reservas', () => {
 
       const reservaData = {
         experiencia_id: '123e4567-e89b-12d3-a456-426614174000',
-        usuario_id: fakeUserId, // ⚠️ Intento de enviar otro usuario_id
+        usuario_id: fakeUserId, // [WARN] Intento de enviar otro usuario_id
         fecha_experiencia: '2024-12-25',
         cantidad_personas: 2,
         precio_total: 100000,

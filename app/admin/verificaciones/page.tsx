@@ -1,25 +1,26 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useUser } from '@clerk/nextjs'
-import { supabase } from '@/lib/supabaseClient'
 import { getVerificationImageUrl } from '@/lib/uploadImages'
 import { DataTable } from '@/components/admin/DataTable'
 import { StatusBadge } from '@/components/admin/StatusBadge'
+import { useToast } from '@/lib/context/ToastContext'
 
 export const dynamic = 'force-dynamic'
 
 interface VerificationRequest {
   id: string
   clerk_user_id: string
-  carnet_frontal_path: string
-  carnet_trasero_path: string
-  foto_cara_path: string
+  full_name: string
+  phone: string
+  id_document_url: string
+  additional_docs_urls?: any[]
+  business_description?: string
   status: 'pending' | 'approved' | 'rejected'
-  submitted_at: string
+  created_at: string
   reviewed_at?: string
   reviewed_by?: string
-  admin_notes?: string
+  rejection_reason?: string
   profiles?: {
     full_name: string
     email: string
@@ -28,7 +29,7 @@ interface VerificationRequest {
 }
 
 export default function AdminVerificacionesPage() {
-  const { user } = useUser()
+  const { success, error: showError } = useToast()
   const [verificationRequests, setVerificationRequests] = useState<VerificationRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedRequest, setSelectedRequest] = useState<VerificationRequest | null>(null)
@@ -46,49 +47,20 @@ export default function AdminVerificacionesPage() {
     try {
       setLoading(true)
       
-      let query = supabase
-        .from('verification_requests')
-        .select('*')
-        .order('submitted_at', { ascending: false })
+      const params = new URLSearchParams()
+      if (filter) params.append('status', filter)
 
-      if (filter !== 'all') {
-        query = query.eq('status', filter)
+      const response = await fetch(`/api/admin/verificaciones${params.toString() ? `?${params}` : ''}`)
+      
+      if (!response.ok) {
+        throw new Error('Error al cargar verificaciones')
       }
 
-      const { data: requests, error: requestsError } = await query
-
-      if (requestsError) throw requestsError
-
-      if (!requests || requests.length === 0) {
-        setVerificationRequests([])
-        return
-      }
-
-      // Obtener perfiles de los usuarios
-      const userIds = requests.map(req => req.clerk_user_id)
-      
-      const { data: profiles, error: profileError } = await supabase
-        .from('profiles')
-        .select('clerk_user_id, full_name, email, user_type')
-        .in('clerk_user_id', userIds)
-      
-      if (profileError) {
-        console.error('Error fetching profiles:', profileError)
-      }
-      
-      // Combinar datos
-      const requestsWithProfiles = requests.map(request => {
-        const profile = profiles?.find(p => p.clerk_user_id === request.clerk_user_id)
-        return {
-          ...request,
-          profiles: profile || null
-        }
-      })
-      
-      setVerificationRequests(requestsWithProfiles)
-
+      const data = await response.json()
+      setVerificationRequests(data || [])
     } catch (error) {
       console.error('Error fetching verification requests:', error)
+      showError('Error al cargar solicitudes de verificación')
     } finally {
       setLoading(false)
     }
@@ -96,17 +68,23 @@ export default function AdminVerificacionesPage() {
 
   const loadImageUrls = async (request: VerificationRequest) => {
     try {
-      const [carnetFrontalUrl, carnetTraseroUrl, fotoCaraUrl] = await Promise.all([
-        getVerificationImageUrl(request.carnet_frontal_path),
-        getVerificationImageUrl(request.carnet_trasero_path),
-        getVerificationImageUrl(request.foto_cara_path)
-      ])
+      const documentUrl = await getVerificationImageUrl(request.id_document_url)
+      
+      const urls: Record<string, string> = {
+        id_document: documentUrl
+      }
 
-      setImageUrls({
-        carnet_frontal: carnetFrontalUrl,
-        carnet_trasero: carnetTraseroUrl,
-        foto_cara: fotoCaraUrl
-      })
+      // Cargar documentos adicionales si existen
+      if (request.additional_docs_urls && request.additional_docs_urls.length > 0) {
+        const additionalUrls = await Promise.all(
+          request.additional_docs_urls.map(async (path, index) => ({
+            [`additional_${index}`]: await getVerificationImageUrl(path)
+          }))
+        )
+        additionalUrls.forEach(urlObj => Object.assign(urls, urlObj))
+      }
+
+      setImageUrls(urls)
     } catch (error) {
       console.error('Error loading image URLs:', error)
     }
@@ -127,38 +105,32 @@ export default function AdminVerificacionesPage() {
   }
 
   const handleApprove = async () => {
-    if (!selectedRequest || !user) return
+    if (!selectedRequest) return
 
     setActionLoading(true)
     try {
-      // Actualizar la solicitud de verificación
-      const { error: requestError } = await supabase
-        .from('verification_requests')
-        .update({
+      const response = await fetch('/api/admin/verificaciones', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: selectedRequest.id,
           status: 'approved',
-          reviewed_at: new Date().toISOString(),
-          reviewed_by: user.emailAddresses[0]?.emailAddress,
-          admin_notes: 'Solicitud aprobada'
-        })
-        .eq('id', selectedRequest.id)
+          clerk_user_id: selectedRequest.clerk_user_id,
+        }),
+      })
 
-      if (requestError) throw requestError
-
-      // Actualizar el perfil del usuario para marcarlo como verificado
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ verified: true })
-        .eq('clerk_user_id', selectedRequest.clerk_user_id)
-
-      if (profileError) throw profileError
+      if (!response.ok) {
+        throw new Error('Error al aprobar solicitud')
+      }
 
       await fetchVerificationRequests()
       closeModal()
-
-      alert('Solicitud aprobada exitosamente')
+      success('✅ Solicitud aprobada exitosamente. El usuario es ahora un guía verificado.')
     } catch (error) {
       console.error('Error approving request:', error)
-      alert('Error al aprobar la solicitud')
+      showError('Error al aprobar la solicitud')
     } finally {
       setActionLoading(false)
     }
@@ -166,33 +138,35 @@ export default function AdminVerificacionesPage() {
 
   const handleReject = async () => {
     if (!selectedRequest || !rejectReason.trim()) {
-      alert('Por favor ingresa una razón para el rechazo')
+      showError('Por favor ingresa una razón para el rechazo')
       return
     }
 
-    if (!user) return
-
     setActionLoading(true)
     try {
-      const { error } = await supabase
-        .from('verification_requests')
-        .update({
+      const response = await fetch('/api/admin/verificaciones', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: selectedRequest.id,
           status: 'rejected',
-          reviewed_at: new Date().toISOString(),
-          reviewed_by: user.emailAddresses[0]?.emailAddress,
-          admin_notes: rejectReason
-        })
-        .eq('id', selectedRequest.id)
+          rejection_reason: rejectReason,
+          clerk_user_id: selectedRequest.clerk_user_id,
+        }),
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        throw new Error('Error al rechazar solicitud')
+      }
 
       await fetchVerificationRequests()
       closeModal()
-
-      alert('Solicitud rechazada')
+      success('Solicitud rechazada correctamente')
     } catch (error) {
       console.error('Error rejecting request:', error)
-      alert('Error al rechazar la solicitud')
+      showError('Error al rechazar la solicitud')
     } finally {
       setActionLoading(false)
     }
@@ -234,7 +208,7 @@ export default function AdminVerificacionesPage() {
       render: (value: string) => <StatusBadge status={value as any} size="sm" />,
     },
     {
-      key: 'submitted_at',
+      key: 'created_at',
       label: 'Fecha de envío',
       sortable: true,
       render: (value: string) => (
@@ -321,79 +295,184 @@ export default function AdminVerificacionesPage() {
       {/* Modal de Detalles */}
       {modalOpen && selectedRequest && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">Solicitud de Verificación</h2>
-                <button onClick={closeModal} className="text-gray-400 hover:text-gray-600 text-2xl">
-                  ×
-                </button>
-              </div>
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#23A69A] to-[#1e8a7e] px-6 py-5 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-white">Solicitud de Verificación</h2>
+              <button 
+                onClick={closeModal} 
+                className="text-white hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center transition-colors"
+              >
+                <span className="text-2xl">×</span>
+              </button>
+            </div>
 
+            {/* Content */}
+            <div className="overflow-y-auto p-6 space-y-6">
               {/* Información del usuario */}
-              <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                <h3 className="font-semibold text-lg mb-2">Información del Usuario</h3>
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  Información del Usuario
+                </h3>
                 <div className="grid md:grid-cols-2 gap-4">
-                  <div>
-                    <p><strong>Nombre:</strong> {selectedRequest.profiles?.full_name || 'Sin nombre'}</p>
-                    <p><strong>Email:</strong> {selectedRequest.profiles?.email || 'No disponible'}</p>
+                  <div className="space-y-2">
+                    <div className="bg-white px-3 py-2 rounded border border-blue-100">
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Nombre</span>
+                      <p className="text-gray-900 font-medium">{selectedRequest.full_name || selectedRequest.profiles?.full_name || 'Sin nombre'}</p>
+                    </div>
+                    <div className="bg-white px-3 py-2 rounded border border-blue-100">
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Email</span>
+                      <p className="text-gray-900 font-medium">{selectedRequest.profiles?.email || 'No disponible'}</p>
+                    </div>
+                    <div className="bg-white px-3 py-2 rounded border border-blue-100">
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Teléfono</span>
+                      <p className="text-gray-900 font-medium">{selectedRequest.phone || 'No disponible'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p><strong>Tipo:</strong> {selectedRequest.profiles?.user_type || 'No especificado'}</p>
-                    <p><strong>Estado:</strong> <StatusBadge status={selectedRequest.status} size="sm" /></p>
+                  <div className="space-y-2">
+                    <div className="bg-white px-3 py-2 rounded border border-blue-100">
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Tipo de Usuario</span>
+                      <p className="text-gray-900 font-medium capitalize">{selectedRequest.profiles?.user_type || 'No especificado'}</p>
+                    </div>
+                    <div className="bg-white px-3 py-2 rounded border border-blue-100">
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Estado</span>
+                      <div className="mt-1">
+                        <StatusBadge status={selectedRequest.status} size="sm" />
+                      </div>
+                    </div>
+                    <div className="bg-white px-3 py-2 rounded border border-blue-100">
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Fecha de Solicitud</span>
+                      <p className="text-gray-900 font-medium">
+                        {new Date(selectedRequest.created_at).toLocaleDateString('es-CL', {
+                          day: 'numeric',
+                          month: 'short',
+                          year: 'numeric'
+                        })}
+                      </p>
+                    </div>
                   </div>
                 </div>
+                {selectedRequest.business_description && (
+                  <div className="mt-4 bg-white px-4 py-3 rounded border border-blue-100">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Descripción del Negocio</span>
+                    <p className="text-gray-800 leading-relaxed">{selectedRequest.business_description}</p>
+                  </div>
+                )}
               </div>
 
               {/* Documentos */}
-              <div className="space-y-6">
-                <h3 className="font-semibold text-lg">Documentos Subidos</h3>
+              <div className="border-t border-gray-200 pt-6">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Documentos Subidos
+                </h3>
                 
-                <div className="grid md:grid-cols-3 gap-4">
-                  {['carnet_frontal', 'carnet_trasero', 'foto_cara'].map((key) => (
-                    <div key={key}>
-                      <h4 className="font-medium mb-2 capitalize">
-                        {key.replace(/_/g, ' ')}
-                      </h4>
-                      {imageUrls[key] ? (
-                        <img
-                          src={imageUrls[key]}
-                          alt={key}
-                          className="w-full rounded-lg border-2 border-gray-200 cursor-pointer hover:border-blue-400"
-                          onClick={() => window.open(imageUrls[key], '_blank')}
-                        />
-                      ) : (
-                        <div className="w-full h-48 bg-gray-100 rounded-lg flex items-center justify-center">
-                          <span className="text-gray-500">Cargando...</span>
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                <div className="grid md:grid-cols-2 gap-4">
+                  {/* Documento de identidad principal */}
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V8a2 2 0 00-2-2h-5m-4 0V5a2 2 0 114 0v1m-4 0a2 2 0 104 0m-5 8a2 2 0 100-4 2 2 0 000 4zm0 0c1.306 0 2.417.835 2.83 2M9 14a3.001 3.001 0 00-2.83 2M15 11h3m-3 4h2" />
+                      </svg>
+                      Documento de Identidad
+                    </h4>
+                    {imageUrls.id_document ? (
+                      <img
+                        src={imageUrls.id_document}
+                        alt="Documento de identidad"
+                        className="w-full rounded-lg border-2 border-gray-300 cursor-pointer hover:border-blue-500 transition-colors shadow-sm"
+                        onClick={() => window.open(imageUrls.id_document, '_blank')}
+                      />
+                    ) : (
+                      <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
+                        <span className="text-gray-600">Cargando...</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Documentos adicionales */}
+                  {selectedRequest.additional_docs_urls && selectedRequest.additional_docs_urls.length > 0 && 
+                    selectedRequest.additional_docs_urls.map((_, index) => (
+                      <div key={index} className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+                          <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          </svg>
+                          Documento Adicional {index + 1}
+                        </h4>
+                        {imageUrls[`additional_${index}`] ? (
+                          <img
+                            src={imageUrls[`additional_${index}`]}
+                            alt={`Documento adicional ${index + 1}`}
+                            className="w-full rounded-lg border-2 border-gray-300 cursor-pointer hover:border-green-500 transition-colors shadow-sm"
+                            onClick={() => window.open(imageUrls[`additional_${index}`], '_blank')}
+                          />
+                        ) : (
+                          <div className="w-full h-48 bg-gray-200 rounded-lg flex items-center justify-center">
+                            <span className="text-gray-600">Cargando...</span>
+                          </div>
+                        )}
+                      </div>
+                    ))
+                  }
                 </div>
               </div>
 
-              {/* Notas del admin */}
-              {selectedRequest.admin_notes && (
-                <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
-                  <h4 className="font-medium mb-2">Notas del Administrador:</h4>
-                  <p className="text-gray-700">{selectedRequest.admin_notes}</p>
+              {/* Razón de rechazo si existe */}
+              {selectedRequest.rejection_reason && (
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg">
+                  <h4 className="font-semibold mb-2 text-red-800 flex items-center gap-2">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Razón de Rechazo
+                  </h4>
+                  <p className="text-gray-800">{selectedRequest.rejection_reason}</p>
                 </div>
               )}
 
               {/* Acciones para solicitudes pendientes */}
               {selectedRequest.status === 'pending' && (
-                <div className="mt-8 space-y-4">
-                  <h3 className="font-semibold text-lg">Acciones</h3>
+                <div className="border-t border-gray-200 pt-6 space-y-4">
+                  <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    Acciones de Verificación
+                  </h3>
+
+                  {/* Advertencia de lo que pasará al aprobar */}
+                  <div className="bg-blue-50 border-l-4 border-blue-500 p-4 rounded-r-lg">
+                    <div className="flex items-start">
+                      <svg className="w-5 h-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div>
+                        <h4 className="font-semibold text-blue-900 mb-1">Al aprobar esta solicitud:</h4>
+                        <ul className="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                          <li>El usuario será promovido automáticamente a <strong>&quot;Guía Turístico&quot;</strong></li>
+                          <li>Su cuenta quedará marcada como <strong>&quot;Verificada&quot;</strong></li>
+                          <li>Podrá crear y publicar experiencias en la plataforma</li>
+                          <li>Esta acción no se puede revertir automáticamente</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Razón de rechazo (requerido para rechazar):
                     </label>
                     <textarea
                       value={rejectReason}
                       onChange={(e) => setRejectReason(e.target.value)}
                       rows={3}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent"
+                      className="w-full p-3 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-[#23A69A] text-gray-900"
                       placeholder="Explica por qué se rechaza la solicitud..."
                     />
                   </div>
@@ -402,20 +481,30 @@ export default function AdminVerificacionesPage() {
                     <button
                       onClick={handleReject}
                       disabled={actionLoading}
-                      className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 disabled:opacity-50"
+                      className="px-6 py-3 bg-red-600 text-white font-semibold rounded-lg hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all"
                     >
                       {actionLoading ? 'Procesando...' : 'Rechazar'}
                     </button>
                     <button
                       onClick={handleApprove}
                       disabled={actionLoading}
-                      className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                      className="px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-md hover:shadow-lg transition-all"
                     >
-                      {actionLoading ? 'Procesando...' : 'Aprobar'}
+                      {actionLoading ? 'Procesando...' : '✓ Aprobar y Promover a Guía'}
                     </button>
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
+              <button
+                onClick={closeModal}
+                className="w-full px-5 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-medium transition-colors"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>

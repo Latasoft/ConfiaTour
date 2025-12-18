@@ -11,10 +11,10 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // Logging para debug (solo en desarrollo)
 if (process.env.NODE_ENV !== 'production') {
-  console.log('🔍 Supabase config:', {
-    url: supabaseUrl ? '✅' : '❌',
-    anonKey: supabaseAnonKey ? '✅' : '❌',
-    serviceKey: supabaseServiceKey ? '✅ CONFIGURADA' : '❌ FALTA'
+  console.log('[DEBUG] Supabase config:', {
+    url: supabaseUrl ? 'OK' : 'MISSING',
+    anonKey: supabaseAnonKey ? 'OK' : 'MISSING',
+    serviceKey: supabaseServiceKey ? 'CONFIGURADA' : 'FALTA'
   })
 }
 
@@ -26,7 +26,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 /**
  * Cliente de servicio con privilegios completos (bypasea RLS)
- * ⚠️ SOLO USAR EN SERVIDOR - Tiene acceso total a la BD
+ * [WARNING] SOLO USAR EN SERVIDOR - Tiene acceso total a la BD
  * Usar para operaciones server-side después de validar autenticación con Clerk
  */
 export const supabaseAdmin = supabaseServiceKey 

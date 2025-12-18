@@ -6,7 +6,7 @@ export async function GET() {
     const checks = {
       clerk: !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY,
       supabase: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
-      resend: !!process.env.RESEND_API_KEY,
+      gmail: !!process.env.GMAIL_USER && !!process.env.GMAIL_APP_PASSWORD,
       timestamp: new Date().toISOString(),
     }
 

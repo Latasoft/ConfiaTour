@@ -48,15 +48,15 @@ export const ReservaCancelacion: React.FC<ReservaCancelacionProps> = ({
                 
                 <table style={{ width: '100%', fontSize: '14px' }}>
                   <tr>
-                    <td style={{ padding: '8px 0', color: '#721c24', width: '40%' }}>📅 Fecha:</td>
+                    <td style={{ padding: '8px 0', color: '#721c24', width: '40%' }}>Fecha:</td>
                     <td style={{ padding: '8px 0', fontWeight: 'bold' }}>{fechaExperiencia}</td>
                   </tr>
                   <tr>
-                    <td style={{ padding: '8px 0', color: '#721c24' }}>📍 Ubicación:</td>
+                    <td style={{ padding: '8px 0', color: '#721c24' }}>Ubicación:</td>
                     <td style={{ padding: '8px 0', fontWeight: 'bold' }}>{experiencia.ubicacion}</td>
                   </tr>
                   <tr>
-                    <td style={{ padding: '8px 0', color: '#721c24' }}>👥 Personas:</td>
+                    <td style={{ padding: '8px 0', color: '#721c24' }}>Personas:</td>
                     <td style={{ padding: '8px 0', fontWeight: 'bold' }}>{reserva.cantidad_personas}</td>
                   </tr>
                   <tr>
@@ -78,7 +78,7 @@ export const ReservaCancelacion: React.FC<ReservaCancelacionProps> = ({
           <tr>
             <td style={{ padding: '0 20px 20px 20px' }}>
               <div style={{ backgroundColor: '#d1ecf1', padding: '20px', borderRadius: '8px', border: '1px solid #0c5460' }}>
-                <h3 style={{ color: '#0c5460', marginTop: 0, fontSize: '18px' }}>💳 Información de Reembolso</h3>
+                <h3 style={{ color: '#0c5460', marginTop: 0, fontSize: '18px' }}>Información de Reembolso</h3>
                 <p style={{ margin: 0, fontSize: '14px', color: '#0c5460' }}>
                   El reembolso de <strong>${reserva.precio_total.toLocaleString()} CLP</strong> será procesado en los próximos 5-10 días hábiles.
                   El dinero será devuelto al mismo método de pago utilizado en la compra.

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabaseClient'
+import { supabaseAdmin } from '@/lib/db/supabase'
 import { requireAdmin } from '@/lib/utils/auth'
 import { AppError } from '@/lib/utils/errors'
 
@@ -13,7 +13,9 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url)
     const estado = searchParams.get('estado')
 
-    let query = supabase
+    console.log('[DEBUG] Admin obteniendo reservas, estado:', estado)
+
+    let query = supabaseAdmin
       .from('reservas')
       .select(`
         *,
@@ -31,11 +33,13 @@ export async function GET(req: NextRequest) {
 
     const { data, error } = await query
 
+    console.log('[DEBUG] Reservas obtenidas:', data?.length, 'error:', error)
+
     if (error) throw error
 
     return NextResponse.json(data)
   } catch (error) {
-    console.error('Error fetching reservas:', error)
+    console.error('[ERROR] Error fetching reservas:', error)
     return NextResponse.json(
       { error: 'Error al obtener reservas' },
       { status: 500 }
@@ -69,9 +73,9 @@ export async function PUT(req: NextRequest) {
       )
     }
 
-    console.log(`📝 Admin ${adminCheck.email} actualizando reserva ${id} a estado: ${estado}`)
+    console.log(`[DEBUG] Admin ${adminCheck.email} actualizando reserva ${id} a estado: ${estado}`)
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('reservas')
       .update({ estado })
       .eq('id', id)
@@ -85,7 +89,7 @@ export async function PUT(req: NextRequest) {
       data,
     })
   } catch (error) {
-    console.error('Error updating reserva:', error)
+    console.error('[ERROR] Error updating reserva:', error)
 
     if (error instanceof AppError) {
       return NextResponse.json(

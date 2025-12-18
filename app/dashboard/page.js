@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic'
 const getAdminEmails = () => {
   const emails = process.env.NEXT_PUBLIC_ADMIN_EMAILS
   if (!emails) {
-    console.error('❌ NEXT_PUBLIC_ADMIN_EMAILS no está configurado')
+    console.error('[ERROR] NEXT_PUBLIC_ADMIN_EMAILS no está configurado')
     return []
   }
   return emails.split(',').map(email => email.trim())
@@ -33,7 +33,7 @@ export default function AdminDashboard() {
   const [filter, setFilter] = useState('pending');
 
   // Debug: Log user info
-  console.log('🔍 User loaded:', isLoaded);
+  console.log('[DEBUG] User loaded:', isLoaded);
   console.log('👤 User object:', user);
   console.log('📧 User email:', user?.emailAddresses[0]?.emailAddress);
   console.log('✅ Admin emails list:', ADMIN_EMAILS);
@@ -43,11 +43,11 @@ export default function AdminDashboard() {
   console.log('🔐 Is admin?', isAdmin);
 
   useEffect(() => {
-    console.log('🎯 useEffect triggered - isLoaded:', isLoaded, 'user:', !!user, 'isAdmin:', isAdmin);
+    console.log('[DEBUG] useEffect triggered - isLoaded:', isLoaded, 'user:', !!user, 'isAdmin:', isAdmin);
     
     if (isLoaded && user) {
       if (!isAdmin) {
-        console.log('❌ User is not admin, redirecting...');
+        console.log('[ERROR] User is not admin, redirecting...');
         router.push('/');
         return;
       }
@@ -59,7 +59,7 @@ export default function AdminDashboard() {
   const fetchVerificationRequests = async () => {
     try {
       console.log('📡 Starting to fetch verification requests...');
-      console.log('🔍 Current filter:', filter);
+      console.log('[DEBUG] Current filter:', filter);
       
       setLoading(true);
       
@@ -76,7 +76,7 @@ export default function AdminDashboard() {
       console.log('🚀 Executing verification requests query...');
       const { data: requests, error: requestsError } = await query;
 
-      console.log('📊 Verification requests result - data:', requests);
+      console.log('[DEBUG] Verification requests result - data:', requests);
       console.log('❗ Verification requests error:', requestsError);
 
       if (requestsError) {
@@ -93,7 +93,7 @@ export default function AdminDashboard() {
       console.log('✅ Raw verification requests:', requests);
       
       // Ahora obtener los perfiles por separado
-      console.log('👥 Fetching profiles for users...');
+      console.log('[DEBUG] Fetching profiles for users...');
       
       const userIds = requests.map(req => req.clerk_user_id);
       console.log('🆔 User IDs to fetch:', userIds);
@@ -152,7 +152,7 @@ export default function AdminDashboard() {
 
   const loadImageUrls = async (request) => {
     try {
-      console.log('🖼️ Loading image URLs for request:', request.id);
+      console.log('[DEBUG] Loading image URLs for request:', request.id);
       
       const [carnetFrontalUrl, carnetTraseroUrl, fotoCaraUrl] = await Promise.all([
         getVerificationImageUrl(request.carnet_frontal_path),
@@ -160,7 +160,7 @@ export default function AdminDashboard() {
         getVerificationImageUrl(request.foto_cara_path)
       ]);
 
-      console.log('🖼️ Image URLs loaded:', {
+      console.log('[DEBUG] Image URLs loaded:', {
         carnet_frontal: carnetFrontalUrl,
         carnet_trasero: carnetTraseroUrl,
         foto_cara: fotoCaraUrl
@@ -177,7 +177,7 @@ export default function AdminDashboard() {
   };
 
   const openModal = async (request) => {
-    console.log('🔍 Opening modal for request:', request);
+    console.log('[DEBUG] Opening modal for request:', request);
     setSelectedRequest(request);
     setModalOpen(true);
     setRejectReason('');
@@ -276,7 +276,7 @@ export default function AdminDashboard() {
   });
 
   if (!isLoaded) {
-    console.log('⏳ Still loading user...');
+    console.log('Loading user...');
     return (
       <div className="min-h-screen bg-gray-50">
         <Navbar />

@@ -1,8 +1,8 @@
 'use client'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
-import { supabase } from '../../../lib/supabaseClient'
+import { useToast } from '@/lib/context/ToastContext'
 import { uploadMultipleImages, deleteImage } from '../../../lib/uploadImages'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -12,9 +12,13 @@ export const dynamic = 'force-dynamic'
 export default function CrearExperienciaPage() {
   const { user, isLoaded } = useUser()
   const router = useRouter()
+  const { success, error: showErrorToast } = useToast()
   const [loading, setLoading] = useState(false)
   const [images, setImages] = useState([])
   const [uploadingImages, setUploadingImages] = useState(false)
+  const [checkingRole, setCheckingRole] = useState(true)
+  const [userRole, setUserRole] = useState(null)
+  const [roleError, setRoleError] = useState(null)
   
   const [formData, setFormData] = useState({
     titulo: '',
@@ -28,6 +32,46 @@ export default function CrearExperienciaPage() {
     fecha_inicio: '',
     fecha_fin: ''
   })
+
+  // Verificar rol del usuario al cargar
+  useEffect(() => {
+    const checkUserRole = async () => {
+      if (!user) {
+        setCheckingRole(false)
+        return
+      }
+
+      try {
+        setCheckingRole(true)
+        const response = await fetch('/api/user/profile')
+        
+        if (!response.ok) {
+          throw new Error('Error obteniendo perfil')
+        }
+
+        const data = await response.json()
+        setUserRole(data.user_type)
+
+        // Verificar que sea guía O admin
+        if (data.user_type !== 'guia' && data.user_type !== 'admin') {
+          setRoleError('Solo los guías pueden crear experiencias. Solicita verificación como guía en tu perfil.')
+        }
+        // Verificar que esté verificado (solo aplica a guías)
+        else if (data.user_type === 'guia' && !data.verified) {
+          setRoleError('Tu cuenta de guía aún no está verificada. Espera la aprobación del equipo o completa el proceso de verificación.')
+        }
+      } catch (error) {
+        console.error('Error verificando rol:', error)
+        setRoleError('Error verificando permisos. Por favor, intenta más tarde.')
+      } finally {
+        setCheckingRole(false)
+      }
+    }
+
+    if (isLoaded) {
+      checkUserRole()
+    }
+  }, [user, isLoaded])
 
   const handleInputChange = (e) => {
     const { name, value } = e.target
@@ -124,7 +168,6 @@ export default function CrearExperienciaPage() {
       const imageUrls = images.map(img => img.url)
       
       const experienciaData = {
-        usuario_id: user.id, // ✅ Aquí está el user_id de Clerk
         titulo: formData.titulo.trim(),
         descripcion: formData.descripcion.trim(),
         categoria: formData.categoria,
@@ -133,34 +176,36 @@ export default function CrearExperienciaPage() {
         moneda: formData.moneda,
         capacidad: parseInt(formData.capacidad),
         duracion: formData.duracion.trim(),
-        fecha_inicio: formData.fecha_inicio,
-        fecha_fin: formData.fecha_fin,
-        imagenes: JSON.stringify(imageUrls),
-        disponible: true,
-        rating_promedio: 0,
-        creado_en: new Date().toISOString(),
-        actualizado_en: new Date().toISOString()
+        fecha_inicio: formData.fecha_inicio || undefined,
+        fecha_fin: formData.fecha_fin || undefined,
+        imagenes: imageUrls
       }
 
-      console.log('Datos a insertar:', experienciaData)
+      console.log('Creando experiencia:', experienciaData)
 
-      const { data, error } = await supabase
-        .from('experiencias')
-        .insert([experienciaData])
-        .select()
+      // Usar API que valida el rol
+      const response = await fetch('/api/experiencias', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(experienciaData),
+      })
 
-      if (error) {
-        console.error('Error de Supabase:', error)
-        throw error
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Error al crear experiencia')
       }
 
-      console.log('Experiencia creada:', data)
-      alert('¡Experiencia creada exitosamente!')
+      console.log('Experiencia creada:', result.data)
+      success('¡Experiencia creada exitosamente!')
       router.push('/mis-experiencias')
       
     } catch (error) {
       console.error('Error creando experiencia:', error)
-      alert('Error al crear la experiencia: ' + error.message)
+      setError(error.message || 'Error al crear la experiencia')
+      console.error('Error creando experiencia:', error)
     } finally {
       setLoading(false)
     }
@@ -172,10 +217,15 @@ export default function CrearExperienciaPage() {
   ]
 
   // Show loading while Clerk is initializing
-  if (!isLoaded) {
+  if (!isLoaded || checkingRole) {
     return (
       <div className="min-h-screen bg-[#f6f4f2] flex items-center justify-center">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#23A69A]"></div>
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#23A69A]"></div>
+          <p className="mt-4 text-gray-600">
+            {!isLoaded ? 'Cargando...' : 'Verificando permisos...'}
+          </p>
+        </div>
       </div>
     )
   }
@@ -189,6 +239,39 @@ export default function CrearExperienciaPage() {
           <Link href="/sign-in" className="bg-[#23A69A] text-white px-6 py-3 rounded-lg hover:bg-[#1e8a7e]">
             Iniciar Sesión
           </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // Mostrar error si no tiene permisos
+  if (roleError) {
+    return (
+      <div className="min-h-screen bg-[#f6f4f2] flex items-center justify-center">
+        <div className="max-w-md mx-auto px-5">
+          <div className="bg-white p-8 rounded-2xl shadow-lg text-center">
+            <div className="mb-4 flex justify-center">
+              <svg className="w-24 h-24 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+              </svg>
+            </div>
+            <h2 className="text-2xl font-bold mb-4 text-red-600">Acceso Restringido</h2>
+            <p className="text-gray-700 mb-6">{roleError}</p>
+            <div className="space-y-3">
+              <Link 
+                href="/perfil/verificar"
+                className="block bg-[#23A69A] text-white px-6 py-3 rounded-lg hover:bg-[#1e8a7e] transition-colors"
+              >
+                Solicitar Verificación como Guía
+              </Link>
+              <Link 
+                href="/"
+                className="block text-gray-600 hover:text-[#23A69A] transition-colors"
+              >
+                Volver al Inicio
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
     )

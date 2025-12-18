@@ -51,7 +51,7 @@ export async function getReservasByUser(userId: string) {
 
 export async function cancelarReserva(reservaId: string, userId: string) {
   try {
-    console.log('❌ Cancelando reserva:', { reservaId, userId })
+    console.log('[DEBUG] Cancelando reserva:', { reservaId, userId })
     const reserva = await reservaService.cancelarReserva(reservaId, userId)
     console.log('✅ Reserva cancelada:', reserva)
     return reserva

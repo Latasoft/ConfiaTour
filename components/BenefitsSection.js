@@ -1,42 +1,57 @@
+import { 
+  TargetIcon, 
+  CreditCardIcon, 
+  HandshakeIcon, 
+  StarIcon, 
+  LeafIcon, 
+  DevicePhoneMobileIcon,
+  GlobeIcon,
+  TrophyIcon,
+  SparklesIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ExclamationTriangleIcon
+} from './icons'
+
 export default function BenefitsSection() {
   const benefits = [
     {
-      icon: "🎯",
+      icon: TargetIcon,
       title: "Consolidación de Experiencias",
       description: "Integración de servicios turísticos en paquetes regionales para reducir costos y mejorar la oferta.",
       features: ["Paquetes multipaís", "Descuentos por volumen", "Itinerarios optimizados"],
       stats: "Hasta 40% de ahorro"
     },
     {
-      icon: "💳",
+      icon: CreditCardIcon,
       title: "Pagos Seguros y Trazables",
       description: "Plataforma con reputación verificada y seguimiento de cada operación para tu tranquilidad.",
       features: ["Mercado Pago", "Transbank", "Múltiples monedas"],
       stats: "100% seguro"
     },
     {
-      icon: "🤝",
+      icon: HandshakeIcon,
       title: "Alianzas Estratégicas",
       description: "Colaboración directa con operadores turísticos, comunidades locales y entidades públicas.",
       features: ["Red de confianza", "Proveedores verificados", "Soporte local"],
       stats: "500+ aliados"
     },
     {
-      icon: "🌟",
+      icon: StarIcon,
       title: "Destinos Emergentes",
       description: "Visibilidad para zonas con alto potencial turístico pero baja exposición comercial.",
       features: ["Rutas inexploradas", "Comunidades auténticas", "Experiencias únicas"],
       stats: "150+ destinos"
     },
     {
-      icon: "🌱",
+      icon: LeafIcon,
       title: "Turismo con Propósito",
       description: "Conexión directa con la cultura, la naturaleza y la economía local sostenible.",
       features: ["Impacto social medible", "Comercio justo", "Conservación ambiental"],
       stats: "95% impacto positivo"
     },
     {
-      icon: "📱",
+      icon: DevicePhoneMobileIcon,
       title: "Gestión Simplificada",
       description: "Sistema digital integral para reservas, pagos y coordinación logística en tiempo real.",
       features: ["App móvil", "Notificaciones push", "Chat en vivo"],
@@ -46,19 +61,19 @@ export default function BenefitsSection() {
 
   const additionalBenefits = [
     {
-      icon: "🌍",
+      icon: GlobeIcon,
       title: "Cobertura Regional Completa",
       description: "Acceso a experiencias en los 4 países del corredor bioceánico con una sola plataforma.",
       highlight: "4 países, 1 plataforma"
     },
     {
-      icon: "🏆",
+      icon: TrophyIcon,
       title: "Calidad Garantizada",
       description: "Sistema de ratings y reviews que asegura experiencias de alta calidad en cada destino.",
       highlight: "Rating promedio 4.8/5"
     },
     {
-      icon: "🎨",
+      icon: SparklesIcon,
       title: "Experiencias Personalizadas",
       description: "Algoritmo inteligente que sugiere experiencias basadas en tus preferencias e historial.",
       highlight: "IA personalizada"
@@ -79,10 +94,10 @@ export default function BenefitsSection() {
             en turismo colaborativo del corredor bioceánico.
           </p>
           <div className="flex flex-wrap justify-center gap-4 text-sm">
-            <span className="px-4 py-2 bg-[#f6f4f2] rounded-full text-gray-700">🇦🇷 Argentina</span>
-            <span className="px-4 py-2 bg-[#f6f4f2] rounded-full text-gray-700">🇨🇱 Chile</span>
-            <span className="px-4 py-2 bg-[#f6f4f2] rounded-full text-gray-700">🇵🇾 Paraguay</span>
-            <span className="px-4 py-2 bg-[#f6f4f2] rounded-full text-gray-700">🇧🇷 Brasil</span>
+            <span className="px-4 py-2 bg-[#f6f4f2] rounded-full text-gray-700 font-medium">Argentina</span>
+            <span className="px-4 py-2 bg-[#f6f4f2] rounded-full text-gray-700 font-medium">Chile</span>
+            <span className="px-4 py-2 bg-[#f6f4f2] rounded-full text-gray-700 font-medium">Paraguay</span>
+            <span className="px-4 py-2 bg-[#f6f4f2] rounded-full text-gray-700 font-medium">Brasil</span>
           </div>
         </div>
 
@@ -94,8 +109,8 @@ export default function BenefitsSection() {
               className="bg-[#f6f4f2] p-8 rounded-2xl hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-black/5 group"
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="text-4xl group-hover:scale-110 transition-transform duration-300">
-                  {benefit.icon}
+                <div className="text-[#23A69A] group-hover:scale-110 transition-transform duration-300">
+                  <benefit.icon className="w-10 h-10" />
                 </div>
                 <span className="bg-white px-3 py-1 rounded-full text-xs font-semibold text-gray-600">
                   {benefit.stats}
@@ -127,7 +142,9 @@ export default function BenefitsSection() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {additionalBenefits.map((benefit, index) => (
               <div key={index} className="text-center">
-                <div className="text-3xl mb-4">{benefit.icon}</div>
+                <div className="text-[#23A69A] mb-4 flex justify-center">
+                  <benefit.icon className="w-12 h-12" />
+                </div>
                 <h5 className="font-bold text-lg mb-2 text-[#1C1C1C]">{benefit.title}</h5>
                 <p className="text-gray-600 text-sm mb-3">{benefit.description}</p>
                 <span className="bg-[#23A69A] text-white px-3 py-1 rounded-full text-xs font-semibold">
@@ -155,28 +172,28 @@ export default function BenefitsSection() {
               <tbody className="text-sm">
                 <tr className="border-b border-gray-100">
                   <td className="py-3 px-4 font-medium">Cobertura Regional</td>
-                  <td className="py-3 px-4 text-center">✅ 4 países</td>
-                  <td className="py-3 px-4 text-center">❌ 1-2 países</td>
+                  <td className="py-3 px-4 text-center"><span className="inline-flex items-center gap-1 text-green-600"><CheckCircleIcon className="w-4 h-4" /> 4 países</span></td>
+                  <td className="py-3 px-4 text-center"><span className="inline-flex items-center gap-1 text-red-500"><XCircleIcon className="w-4 h-4" /> 1-2 países</span></td>
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-3 px-4 font-medium">Enfoque Colaborativo</td>
-                  <td className="py-3 px-4 text-center">✅ 100% colaborativo</td>
-                  <td className="py-3 px-4 text-center">⚠️ Parcial</td>
+                  <td className="py-3 px-4 text-center"><span className="inline-flex items-center gap-1 text-green-600"><CheckCircleIcon className="w-4 h-4" /> 100% colaborativo</span></td>
+                  <td className="py-3 px-4 text-center"><span className="inline-flex items-center gap-1 text-amber-500"><ExclamationTriangleIcon className="w-4 h-4" /> Parcial</span></td>
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-3 px-4 font-medium">Múltiples Monedas</td>
-                  <td className="py-3 px-4 text-center">✅ 5 monedas</td>
-                  <td className="py-3 px-4 text-center">❌ 1-2 monedas</td>
+                  <td className="py-3 px-4 text-center"><span className="inline-flex items-center gap-1 text-green-600"><CheckCircleIcon className="w-4 h-4" /> 5 monedas</span></td>
+                  <td className="py-3 px-4 text-center"><span className="inline-flex items-center gap-1 text-red-500"><XCircleIcon className="w-4 h-4" /> 1-2 monedas</span></td>
                 </tr>
                 <tr className="border-b border-gray-100">
                   <td className="py-3 px-4 font-medium">Impacto Social</td>
-                  <td className="py-3 px-4 text-center">✅ Medible</td>
-                  <td className="py-3 px-4 text-center">❌ No medible</td>
+                  <td className="py-3 px-4 text-center"><span className="inline-flex items-center gap-1 text-green-600"><CheckCircleIcon className="w-4 h-4" /> Medible</span></td>
+                  <td className="py-3 px-4 text-center"><span className="inline-flex items-center gap-1 text-red-500"><XCircleIcon className="w-4 h-4" /> No medible</span></td>
                 </tr>
                 <tr>
                   <td className="py-3 px-4 font-medium">Soporte Local</td>
-                  <td className="py-3 px-4 text-center">✅ 24/7 multiidioma</td>
-                  <td className="py-3 px-4 text-center">⚠️ Limitado</td>
+                  <td className="py-3 px-4 text-center"><span className="inline-flex items-center gap-1 text-green-600"><CheckCircleIcon className="w-4 h-4" /> 24/7 multiidioma</span></td>
+                  <td className="py-3 px-4 text-center"><span className="inline-flex items-center gap-1 text-amber-500"><ExclamationTriangleIcon className="w-4 h-4" /> Limitado</span></td>
                 </tr>
               </tbody>
             </table>

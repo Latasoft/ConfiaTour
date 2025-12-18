@@ -148,4 +148,38 @@ export class ExperienciaRepository {
 
     if (error) throw error
   }
+
+  /**
+   * Obtiene el email del proveedor/guía de una experiencia
+   */
+  async getProviderEmail(experienciaId: string): Promise<{ email: string; name: string } | null> {
+    // 1. Obtener la experiencia y su usuario_id
+    const { data: experiencia, error: expError } = await this.client
+      .from('experiencias')
+      .select('usuario_id')
+      .eq('id', experienciaId)
+      .single()
+    
+    if (expError || !experiencia) {
+      console.error('[ERROR] No se encontró la experiencia:', expError)
+      return null
+    }
+
+    // 2. Obtener el email del perfil usando clerk_user_id
+    const { data: profile, error: profileError } = await this.client
+      .from('profiles')
+      .select('email, full_name')
+      .eq('clerk_user_id', experiencia.usuario_id)
+      .single()
+    
+    if (profileError || !profile) {
+      console.error('[ERROR] No se encontró el perfil del usuario:', profileError)
+      return null
+    }
+
+    return {
+      email: profile.email,
+      name: profile.full_name || 'Guía'
+    }
+  }
 }

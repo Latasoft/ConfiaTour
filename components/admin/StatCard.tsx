@@ -3,7 +3,7 @@ import React from 'react'
 interface StatCardProps {
   title: string
   value: string | number
-  icon: string
+  icon: React.ComponentType<{ className?: string }>
   trend?: {
     value: number
     isPositive: boolean
@@ -28,11 +28,14 @@ export const StatCard: React.FC<StatCardProps> = ({
   subtitle,
   color = 'info',
 }) => {
+  const IconComponent = icon
   return (
     <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-[#23A69A] hover:shadow-lg transition-shadow">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-gray-600 text-sm font-medium uppercase">{title}</h3>
-        <span className="text-3xl">{icon}</span>
+        <div className="text-[#23A69A]">
+          <IconComponent className="w-8 h-8" />
+        </div>
       </div>
       
       <div className="mb-2">

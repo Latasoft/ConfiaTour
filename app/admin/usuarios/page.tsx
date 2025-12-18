@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import { DataTable } from '@/components/admin/DataTable'
 import { StatusBadge } from '@/components/admin/StatusBadge'
 import { Profile } from '@/types'
-import { supabase } from '@/lib/supabaseClient'
 
 export const dynamic = 'force-dynamic'
 
@@ -29,40 +28,21 @@ export default function AdminUsuariosPage() {
     try {
       setLoading(true)
       
-      // Obtener perfiles
-      const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false })
+      const params = new URLSearchParams()
+      if (filtroTipo) params.append('tipo', filtroTipo)
+      if (filtroVerificado) params.append('verificado', filtroVerificado)
 
-      if (profilesError) throw profilesError
+      const response = await fetch(`/api/admin/usuarios${params.toString() ? `?${params}` : ''}`)
+      
+      if (!response.ok) {
+        throw new Error('Error al cargar usuarios')
+      }
 
-      // Para cada usuario, obtener estadísticas
-      const usuariosConStats = await Promise.all(
-        (profiles || []).map(async (profile) => {
-          // Contar experiencias del usuario
-          const { count: expCount } = await supabase
-            .from('experiencias')
-            .select('*', { count: 'exact', head: true })
-            .eq('usuario_id', profile.clerk_user_id)
-
-          // Contar reservas del usuario
-          const { count: resCount } = await supabase
-            .from('reservas')
-            .select('*', { count: 'exact', head: true })
-            .eq('usuario_id', profile.clerk_user_id)
-
-          return {
-            ...profile,
-            total_experiencias: expCount || 0,
-            total_reservas: resCount || 0,
-          }
-        })
-      )
-
-      setUsuarios(usuariosConStats)
+      const data = await response.json()
+      setUsuarios(data || [])
     } catch (error) {
       console.error('Error cargando usuarios:', error)
+      alert('Error al cargar usuarios')
     } finally {
       setLoading(false)
     }
@@ -72,12 +52,20 @@ export default function AdminUsuariosPage() {
     if (!confirm(`¿${currentVerified ? 'Desverificar' : 'Verificar'} a este usuario?`)) return
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ verified: !currentVerified })
-        .eq('clerk_user_id', clerkUserId)
+      const response = await fetch('/api/admin/usuarios', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          clerk_user_id: clerkUserId,
+          verified: !currentVerified,
+        }),
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        throw new Error('Error al actualizar verificación')
+      }
 
       setUsuarios(prev =>
         prev.map(user =>
@@ -264,114 +252,161 @@ export default function AdminUsuariosPage() {
       {/* Modal de Detalles */}
       {showModal && selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
-              <div className="flex justify-between items-start mb-4">
-                <h2 className="text-2xl font-bold">Detalles de Usuario</h2>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="text-gray-500 hover:text-gray-700 text-2xl"
-                >
-                  ×
-                </button>
-              </div>
+          <div className="bg-white rounded-xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#23A69A] to-[#1e8a7e] px-6 py-5 flex justify-between items-center">
+              <h2 className="text-2xl font-bold text-white">Detalles de Usuario</h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-white hover:bg-white/20 rounded-full w-8 h-8 flex items-center justify-center transition-colors"
+              >
+                <span className="text-2xl">×</span>
+              </button>
+            </div>
 
-              <div className="space-y-4">
-                {/* Información Personal */}
-                <div>
-                  <h3 className="font-semibold text-gray-700 mb-2">Información Personal</h3>
-                  <div className="bg-gray-50 p-4 rounded-lg space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Nombre:</span>
-                      <span className="font-medium">{selectedUser.full_name || 'No especificado'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Email:</span>
-                      <span className="font-medium">{selectedUser.email}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Teléfono:</span>
-                      <span className="font-medium">{selectedUser.phone || 'No especificado'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Tipo:</span>
-                      <span className="font-medium capitalize">{selectedUser.user_type}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Estado:</span>
-                      <StatusBadge status={selectedUser.verified ? 'verificado' : 'no_verificado'} />
-                    </div>
+            {/* Content */}
+            <div className="overflow-y-auto p-6 space-y-6">
+              {/* Información Personal */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                  Información Personal
+                </h3>
+                <div className="space-y-3">
+                  <div className="bg-white px-4 py-3 rounded-lg border border-blue-100">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Nombre Completo</span>
+                    <span className="text-gray-900 font-medium">{selectedUser.full_name || 'No especificado'}</span>
                   </div>
-                </div>
-
-                {/* Biografía */}
-                {selectedUser.bio && (
-                  <div>
-                    <h3 className="font-semibold text-gray-700 mb-2">Biografía</h3>
-                    <div className="bg-gray-50 p-4 rounded-lg">
-                      <p className="text-gray-700">{selectedUser.bio}</p>
-                    </div>
+                  <div className="bg-white px-4 py-3 rounded-lg border border-blue-100">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Email</span>
+                    <span className="text-gray-900 font-medium">{selectedUser.email}</span>
                   </div>
-                )}
-
-                {/* Estadísticas */}
-                <div>
-                  <h3 className="font-semibold text-gray-700 mb-2">Actividad en la Plataforma</h3>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-blue-50 p-4 rounded-lg">
-                      <div className="text-sm text-blue-600 mb-1">Experiencias Publicadas</div>
-                      <div className="text-2xl font-bold text-blue-700">{selectedUser.total_experiencias}</div>
-                    </div>
-                    <div className="bg-green-50 p-4 rounded-lg">
-                      <div className="text-sm text-green-600 mb-1">Reservas Realizadas</div>
-                      <div className="text-2xl font-bold text-green-700">{selectedUser.total_reservas}</div>
-                    </div>
+                  <div className="bg-white px-4 py-3 rounded-lg border border-blue-100">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Teléfono</span>
+                    <span className="text-gray-900 font-medium">{selectedUser.phone || 'No especificado'}</span>
                   </div>
-                </div>
-
-                {/* Fechas */}
-                <div>
-                  <h3 className="font-semibold text-gray-700 mb-2">Información de Cuenta</h3>
-                  <div className="bg-gray-50 p-4 rounded-lg space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Fecha de Registro:</span>
-                      <span>{new Date(selectedUser.created_at).toLocaleDateString('es-CL', { dateStyle: 'long' })}</span>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-white px-4 py-3 rounded-lg border border-blue-100">
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Tipo de Usuario</span>
+                      <span className="text-gray-900 font-medium capitalize">{selectedUser.user_type}</span>
                     </div>
-                    {selectedUser.updated_at && (
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Última Actualización:</span>
-                        <span>{new Date(selectedUser.updated_at).toLocaleDateString('es-CL', { dateStyle: 'long' })}</span>
+                    <div className="bg-white px-4 py-3 rounded-lg border border-blue-100">
+                      <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">Estado</span>
+                      <div className="mt-1">
+                        <StatusBadge status={selectedUser.verified ? 'verificado' : 'no_verificado'} />
                       </div>
-                    )}
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">ID de Clerk:</span>
-                      <span className="font-mono text-xs">{selectedUser.clerk_user_id}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6 pt-4 border-t flex gap-3">
-                <button
-                  onClick={() => {
-                    handleToggleVerificacion(selectedUser.clerk_user_id, selectedUser.verified)
-                    setShowModal(false)
-                  }}
-                  className={`flex-1 px-4 py-2 rounded-lg font-medium ${
-                    selectedUser.verified
-                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
-                  }`}
-                >
-                  {selectedUser.verified ? 'Desverificar Usuario' : 'Verificar Usuario'}
-                </button>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  Cerrar
-                </button>
+              {/* Biografía */}
+              {selectedUser.bio && (
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-5">
+                  <h3 className="text-lg font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    Biografía
+                  </h3>
+                  <div className="bg-white px-4 py-3 rounded-lg border border-purple-100">
+                    <p className="text-gray-800 leading-relaxed">{selectedUser.bio}</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Estadísticas */}
+              <div className="border-t border-gray-200 pt-6">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Actividad en la Plataforma
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg p-5">
+                    <div className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-2">Experiencias Publicadas</div>
+                    <div className="text-3xl font-bold text-blue-900 flex items-center gap-2">
+                      {selectedUser.total_experiencias}
+                      <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300 rounded-lg p-5">
+                    <div className="text-xs font-bold text-green-700 uppercase tracking-wide mb-2">Reservas Realizadas</div>
+                    <div className="text-3xl font-bold text-green-900 flex items-center gap-2">
+                      {selectedUser.total_reservas}
+                      <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              {/* Información de Cuenta */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-5">
+                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  Información de Cuenta
+                </h3>
+                <div className="space-y-3">
+                  <div className="bg-white px-4 py-3 rounded-lg border border-gray-200 flex justify-between items-center">
+                    <span className="text-sm font-medium text-gray-600">Fecha de Registro:</span>
+                    <span className="text-sm font-semibold text-gray-900">
+                      {new Date(selectedUser.created_at).toLocaleDateString('es-CL', { 
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric'
+                      })}
+                    </span>
+                  </div>
+                  {selectedUser.updated_at && (
+                    <div className="bg-white px-4 py-3 rounded-lg border border-gray-200 flex justify-between items-center">
+                      <span className="text-sm font-medium text-gray-600">Última Actualización:</span>
+                      <span className="text-sm font-semibold text-gray-900">
+                        {new Date(selectedUser.updated_at).toLocaleDateString('es-CL', { 
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })}
+                      </span>
+                    </div>
+                  )}
+                  <div className="bg-white px-4 py-3 rounded-lg border border-gray-200">
+                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1">ID de Clerk</span>
+                    <span className="font-mono text-xs text-gray-900 break-all">{selectedUser.clerk_user_id}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="border-t border-gray-200 px-6 py-4 bg-gray-50 flex gap-3">
+              <button
+                onClick={() => {
+                  handleToggleVerificacion(selectedUser.clerk_user_id, selectedUser.verified)
+                  setShowModal(false)
+                }}
+                className={`flex-1 px-5 py-3 rounded-lg font-semibold transition-all shadow-md hover:shadow-lg ${
+                  selectedUser.verified
+                    ? 'bg-gray-600 text-white hover:bg-gray-700'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                {selectedUser.verified ? 'Desverificar Usuario' : 'Verificar Usuario'}
+              </button>
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-5 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-medium transition-colors"
+              >
+                Cerrar
+              </button>
             </div>
           </div>
         </div>

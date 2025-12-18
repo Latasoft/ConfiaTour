@@ -94,13 +94,14 @@ export function DataTable<T extends { id: string | number }>({
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
       {/* Tabla */}
       <div className="overflow-x-auto">
-        <table className="w-full">
+        <div className="inline-block min-w-full align-middle">
+          <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               {columns.map((column) => (
                 <th
                   key={String(column.key)}
-                  className={`px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
+                  className={`px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${
                     column.sortable ? 'cursor-pointer hover:bg-gray-100' : ''
                   } ${column.width || ''}`}
                   onClick={() => column.sortable && handleSort(String(column.key))}
@@ -127,25 +128,28 @@ export function DataTable<T extends { id: string | number }>({
                 onClick={() => onRowClick?.(row)}
               >
                 {columns.map((column) => (
-                  <td key={String(column.key)} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {column.render
-                      ? column.render(getValue(row, String(column.key)), row)
-                      : String(getValue(row, String(column.key)) || '-')}
+                  <td key={String(column.key)} className="px-3 sm:px-6 py-4 text-sm text-gray-900">
+                    <div className="max-w-xs overflow-hidden">
+                      {column.render
+                        ? column.render(getValue(row, String(column.key)), row)
+                        : String(getValue(row, String(column.key)) || '-')}
+                    </div>
                   </td>
                 ))}
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Paginación */}
       {totalPages > 1 && (
-        <div className="bg-gray-50 px-6 py-3 flex items-center justify-between border-t border-gray-200">
-          <div className="text-sm text-gray-700">
-            Mostrando {startIndex + 1} a {Math.min(endIndex, data.length)} de {data.length} resultados
+        <div className="bg-gray-50 px-3 sm:px-6 py-3 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-gray-200">
+          <div className="text-sm text-gray-700 text-center sm:text-left">
+            {startIndex + 1}-{Math.min(endIndex, data.length)} de {data.length}
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap justify-center">
             <button
               onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
               disabled={currentPage === 1}
@@ -153,7 +157,7 @@ export function DataTable<T extends { id: string | number }>({
             >
               Anterior
             </button>
-            <div className="flex gap-1">
+            <div className="hidden sm:flex gap-1">
               {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                 <button
                   key={page}
@@ -167,6 +171,9 @@ export function DataTable<T extends { id: string | number }>({
                   {page}
                 </button>
               ))}
+            </div>
+            <div className="sm:hidden text-sm font-medium text-gray-700">
+              Página {currentPage} de {totalPages}
             </div>
             <button
               onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}

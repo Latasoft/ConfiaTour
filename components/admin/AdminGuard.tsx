@@ -7,7 +7,7 @@ import { useEffect, useState } from 'react'
 const getAdminEmails = (): string[] => {
   const emails = process.env.NEXT_PUBLIC_ADMIN_EMAILS
   if (!emails) {
-    console.error('❌ NEXT_PUBLIC_ADMIN_EMAILS no está configurado')
+    console.error('[ERROR] NEXT_PUBLIC_ADMIN_EMAILS no está configurado')
     return []
   }
   return emails.split(',').map(email => email.trim())

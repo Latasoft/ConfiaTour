@@ -1,16 +1,38 @@
 'use client'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   SignInButton,
   SignUpButton,
   SignedIn,
   SignedOut,
   UserButton,
+  useUser,
 } from '@clerk/nextjs'
+
+// Obtener emails de admin desde variable de entorno
+const getAdminEmails = () => {
+  const emails = process.env.NEXT_PUBLIC_ADMIN_EMAILS
+  if (!emails) return []
+  return emails.split(',').map(email => email.trim().toLowerCase())
+}
+
+const ADMIN_EMAILS = getAdminEmails()
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [isAdmin, setIsAdmin] = useState(false)
+  const { user, isLoaded } = useUser()
+
+  // Verificar si el usuario es admin
+  useEffect(() => {
+    if (isLoaded && user) {
+      const userEmail = user.emailAddresses[0]?.emailAddress?.toLowerCase()
+      setIsAdmin(userEmail ? ADMIN_EMAILS.includes(userEmail) : false)
+    } else {
+      setIsAdmin(false)
+    }
+  }, [isLoaded, user])
 
   // Enlaces de navegación públicos
   const publicNavLinks = [
@@ -56,6 +78,12 @@ export default function Navbar() {
               <Link href="/perfil" className="text-gray-700 hover:text-[#23A69A] transition-colors">
                 Mi Perfil
               </Link>
+              {/* Enlace de Admin - solo visible para admins */}
+              {isAdmin && (
+                <Link href="/admin" className="text-white bg-[#23A69A] hover:bg-[#1d8a80] px-3 py-1.5 rounded-lg transition-colors font-medium">
+                  Panel Admin
+                </Link>
+              )}
             </SignedIn>
           </div>
 
@@ -118,6 +146,16 @@ export default function Navbar() {
                     {link.label}
                   </Link>
                 ))}
+                {/* Enlace de Admin - solo visible para admins */}
+                {isAdmin && (
+                  <Link
+                    href="/admin"
+                    className="px-3 py-2 rounded-xl bg-[#23A69A] text-white hover:bg-[#1d8a80] transition-colors font-medium"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    Panel Admin
+                  </Link>
+                )}
               </SignedIn>
 
               {/* Auth options for mobile */}

@@ -3,8 +3,19 @@ import { Reserva, EstadoReserva } from '@/types'
 import { validateData, reservaSchema } from '../schemas'
 import { ValidationError, ConflictError } from '../utils/errors'
 import { CurrencyService } from './currency.service'
-import { emailService } from './email.service'
 import { experienciaService } from './experiencia.service'
+import { ExperienciaRepository } from '../repositories/experiencia.repository'
+
+// Import dinámico de emailService solo en servidor
+const getEmailService = async () => {
+  if (typeof window === 'undefined') {
+    const { emailService } = await import('./email.service')
+    return emailService
+  }
+  return null
+}
+
+const experienciaRepository = new ExperienciaRepository()
 
 export class ReservaService {
   private repository: ReservaRepository
@@ -31,12 +42,12 @@ export class ReservaService {
    * Crea una nueva reserva con validación y conversión de moneda
    */
   async crearReserva(data: Partial<Reserva>): Promise<Reserva> {
-    console.log('🔍 Service: Datos recibidos para crear reserva:', JSON.stringify(data, null, 2))
+    console.log('[DEBUG] Service: Datos recibidos para crear reserva:', JSON.stringify(data, null, 2))
     
     // Validar datos
     const validation = validateData(reservaSchema, data)
     if (!validation.success) {
-      console.error('❌ Service: Validación fallida:', validation.errors)
+      console.error('[ERROR] Service: Validación fallida:', validation.errors)
       throw new ValidationError(validation.errors.join(', '))
     }
 
@@ -69,9 +80,10 @@ export class ReservaService {
 
     // Enviar email de confirmación y comprobante de pago
     try {
+      const emailService = await getEmailService()
       const experiencia = await experienciaService.getExperienciaById(reserva.experiencia_id)
       
-      if (userEmail && userName && experiencia) {
+      if (emailService && userEmail && userName && experiencia) {
         // Email de confirmación
         await emailService.sendReservaConfirmation({
           reserva,
@@ -91,9 +103,32 @@ export class ReservaService {
             email: userEmail
           }
         })
+
+        // ✅ NUEVO: Notificar al guía/proveedor
+        try {
+          const providerInfo = await experienciaRepository.getProviderEmail(reserva.experiencia_id)
+          
+          if (providerInfo?.email) {
+            await emailService.sendNewReservaToProvider(
+              providerInfo.email,
+              providerInfo.name,
+              {
+                reserva,
+                experiencia,
+                usuario: {
+                  nombre: userName,
+                  email: userEmail
+                }
+              }
+            )
+            console.log(`✅ Notificación enviada al guía: ${providerInfo.email}`)
+          }
+        } catch (providerError) {
+          console.warn('[WARN] Error enviando notificación al guía:', providerError)
+        }
       }
     } catch (error) {
-      console.error('⚠️ Error enviando emails de confirmación:', error)
+      console.error('[WARN] Error enviando emails de confirmación:', error)
       // No lanzar error para no interrumpir el flujo
     }
     
@@ -123,9 +158,10 @@ export class ReservaService {
 
     // Enviar email de cancelación
     try {
+      const emailService = await getEmailService()
       const experiencia = await experienciaService.getExperienciaById(reserva.experiencia_id)
       
-      if (userEmail && userName && experiencia) {
+      if (emailService && userEmail && userName && experiencia) {
         await emailService.sendReservaCancellation({
           reserva,
           experiencia,
@@ -136,7 +172,7 @@ export class ReservaService {
         })
       }
     } catch (error) {
-      console.error('⚠️ Error enviando email de cancelación:', error)
+      console.error('[WARN] Error enviando email de cancelación:', error)
       // No lanzar error para no interrumpir el flujo
     }
 

@@ -1,4 +1,4 @@
-import { supabase } from '../db/supabase'
+import { supabaseAdmin } from '../db/supabase'
 import { 
   ReservasStats, 
   ExperienciasStats, 
@@ -8,14 +8,18 @@ import {
   Categoria 
 } from '@/types'
 
+/**
+ * Servicio de estadísticas para el panel de administración
+ * Usa supabaseAdmin para bypasear RLS y obtener todas las estadísticas
+ */
 export class StatsService {
   /**
    * Obtiene estadísticas de reservas
    */
   async getReservasStats(): Promise<ReservasStats> {
     try {
-      // Obtener todas las reservas
-      const { data: reservas, error } = await supabase
+      // Obtener todas las reservas usando supabaseAdmin
+      const { data: reservas, error } = await supabaseAdmin
         .from('reservas')
         .select('estado, precio_total')
 
@@ -56,7 +60,7 @@ export class StatsService {
    */
   async getExperienciasStats(): Promise<ExperienciasStats> {
     try {
-      const { data: experiencias, error } = await supabase
+      const { data: experiencias, error } = await supabaseAdmin
         .from('experiencias')
         .select('disponible, categoria, rating_promedio, id, titulo')
 
@@ -92,7 +96,7 @@ export class StatsService {
         : 0
 
       // Experiencias más reservadas
-      const { data: reservasPorExp, error: resError } = await supabase
+      const { data: reservasPorExp, error: resError } = await supabaseAdmin
         .from('reservas')
         .select('experiencia_id, precio_total')
         .in('estado', ['confirmada', 'completada'])
@@ -142,7 +146,7 @@ export class StatsService {
    */
   async getUsersStats(): Promise<UsersStats> {
     try {
-      const { data: profiles, error } = await supabase
+      const { data: profiles, error } = await supabaseAdmin
         .from('profiles')
         .select('user_type, verified')
 
@@ -172,7 +176,7 @@ export class StatsService {
    */
   async getRevenueStats(): Promise<RevenueStats> {
     try {
-      const { data: reservas, error } = await supabase
+      const { data: reservas, error } = await supabaseAdmin
         .from('reservas')
         .select('precio_total, fecha_pago, experiencia_id, experiencias(titulo)')
         .in('estado', ['confirmada', 'completada'])

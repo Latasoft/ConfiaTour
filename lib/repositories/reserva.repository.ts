@@ -74,7 +74,7 @@ export class ReservaRepository {
       .single()
 
     if (error) {
-      console.error('❌ Repository: Error insertando reserva:', error)
+      console.error('[ERROR] Repository: Error insertando reserva:', error)
       throw error
     }
     if (!data) throw new ValidationError('No se pudo crear la reserva')

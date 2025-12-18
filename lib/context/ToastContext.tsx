@@ -1,6 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState, useCallback, ReactNode } from 'react'
+import { CheckCircleIcon, XCircleIcon, ExclamationTriangleIcon } from '@/components/icons'
 
 type ToastType = 'success' | 'error' | 'warning' | 'info'
 
@@ -79,7 +80,7 @@ export function useToast() {
 // Componente visual de Toast
 function ToastContainer({ toasts, onClose }: { toasts: Toast[]; onClose: (id: string) => void }) {
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 max-w-md">
+    <div className="fixed top-20 right-4 z-50 flex flex-col gap-2 max-w-md">
       {toasts.map((toast) => (
         <ToastItem key={toast.id} toast={toast} onClose={onClose} />
       ))}
@@ -88,33 +89,50 @@ function ToastContainer({ toasts, onClose }: { toasts: Toast[]; onClose: (id: st
 }
 
 function ToastItem({ toast, onClose }: { toast: Toast; onClose: (id: string) => void }) {
-  const bgColor = {
-    success: 'bg-green-500',
-    error: 'bg-red-500',
-    warning: 'bg-yellow-500',
-    info: 'bg-blue-500',
+  const styles = {
+    success: {
+      bg: 'bg-green-50 border-green-200',
+      text: 'text-green-800',
+      icon: CheckCircleIcon,
+      iconColor: 'text-green-600'
+    },
+    error: {
+      bg: 'bg-red-50 border-red-200',
+      text: 'text-red-800',
+      icon: XCircleIcon,
+      iconColor: 'text-red-600'
+    },
+    warning: {
+      bg: 'bg-amber-50 border-amber-200',
+      text: 'text-amber-800',
+      icon: ExclamationTriangleIcon,
+      iconColor: 'text-amber-600'
+    },
+    info: {
+      bg: 'bg-blue-50 border-blue-200',
+      text: 'text-blue-800',
+      icon: CheckCircleIcon,
+      iconColor: 'text-blue-600'
+    },
   }[toast.type]
 
-  const icon = {
-    success: '✓',
-    error: '✕',
-    warning: '⚠',
-    info: 'ℹ',
-  }[toast.type]
+  const IconComponent = styles.icon
 
   return (
     <div
-      className={`${bgColor} text-white px-6 py-4 rounded-lg shadow-lg flex items-center gap-3 animate-slide-in-right`}
+      className={`${styles.bg} ${styles.text} border px-4 py-3 rounded-lg shadow-lg flex items-center gap-3 animate-slide-in min-w-[320px]`}
       role="alert"
     >
-      <span className="text-xl font-bold">{icon}</span>
-      <p className="flex-1">{toast.message}</p>
+      <IconComponent className={`w-5 h-5 ${styles.iconColor} flex-shrink-0`} />
+      <p className="flex-1 text-sm font-medium">{toast.message}</p>
       <button
         onClick={() => onClose(toast.id)}
-        className="text-white hover:text-gray-200 transition-colors"
+        className="text-gray-400 hover:text-gray-600 transition-colors"
         aria-label="Cerrar"
       >
-        ✕
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+        </svg>
       </button>
     </div>
   )

@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useToast } from '@/lib/context/ToastContext'
 import Image from 'next/image'
 import { ReservasAPI } from '../../lib/api/reservas'
 
@@ -11,6 +12,7 @@ function MisReservasContent() {
   const { user, isLoaded } = useUser()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { success, error: showErrorToast } = useToast()
   const [reservas, setReservas] = useState([])
   const [loading, setLoading] = useState(true)
   const [cancelando, setCancelando] = useState(null)
@@ -70,7 +72,7 @@ function MisReservasContent() {
       setReservaACancelar(null)
       
       // Mostrar mensaje de éxito
-      alert('✅ Reserva cancelada exitosamente. Recibirás un email de confirmación.')
+      success('Reserva cancelada exitosamente. Recibirás un email de confirmación.')
     } catch (error) {
       console.error('Error cancelando reserva:', error)
       
@@ -87,7 +89,7 @@ function MisReservasContent() {
         errorMessage = error.message
       }
       
-      alert(`❌ ${errorMessage}`)
+      showErrorToast(errorMessage)
     } finally {
       setCancelando(null)
     }
@@ -158,16 +160,16 @@ function MisReservasContent() {
     switch (reserva.estado) {
       case 'confirmada':
         if (fechaExp < ahora) {
-          return { texto: 'Completada', color: 'bg-gray-100 text-gray-800', icon: '✓' }
+          return { texto: 'Completada', color: 'bg-gray-100 text-gray-800' }
         } else {
-          return { texto: 'Activa', color: 'bg-green-100 text-green-800', icon: '✓' }
+          return { texto: 'Activa', color: 'bg-green-100 text-green-800' }
         }
       case 'cancelada':
-        return { texto: 'Cancelada', color: 'bg-red-100 text-red-800', icon: '✕' }
+        return { texto: 'Cancelada', color: 'bg-red-100 text-red-800' }
       case 'pendiente_pago':
-        return { texto: 'Pendiente Pago', color: 'bg-yellow-100 text-yellow-800', icon: '⏳' }
+        return { texto: 'Pendiente Pago', color: 'bg-yellow-100 text-yellow-800' }
       default:
-        return { texto: reserva.estado, color: 'bg-gray-100 text-gray-800', icon: '?' }
+        return { texto: reserva.estado, color: 'bg-gray-100 text-gray-800' }
     }
   }
 
@@ -432,7 +434,7 @@ function MisReservasContent() {
             </p>
             <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
               <p className="text-sm text-yellow-800">
-                ⚠️ Una vez cancelada, no podrás recuperar esta reserva. El reembolso (si aplica) se procesará según nuestras políticas.
+                Una vez cancelada, no podrás recuperar esta reserva. El reembolso (si aplica) se procesará según nuestras políticas.
               </p>
             </div>
             <div className="flex space-x-4">

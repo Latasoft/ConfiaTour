@@ -15,13 +15,13 @@ function TransbankReturnContent() {
   useEffect(() => {
     const procesarRetorno = async () => {
       try {
-        console.log('🔄 Procesando retorno de Transbank...')
+        console.log('[DEBUG] Procesando retorno de Transbank...')
         
         const token = searchParams.get('token_ws')
         const reservaId = searchParams.get('reserva_id')
         const experienciaId = searchParams.get('experiencia_id')
         
-        console.log('📊 Parámetros recibidos:', { token, reservaId, experienciaId })
+        console.log('[DEBUG] Parámetros recibidos:', { token, reservaId, experienciaId })
 
         // Si el usuario canceló el pago (no hay token)
         if (!token) {
@@ -65,7 +65,7 @@ function TransbankReturnContent() {
         }
 
         if (!response.ok) {
-          console.error('❌ Error en API:', result)
+          console.error('[ERROR] Error en API:', result)
           throw new Error(result.error || `Error HTTP ${response.status}`)
         }
 
@@ -101,7 +101,7 @@ function TransbankReturnContent() {
             .eq('id', reservaId)
 
           if (updateError) {
-            console.error('❌ Error actualizando reserva:', updateError)
+            console.error('[ERROR] Error actualizando reserva:', updateError)
             throw updateError
           }
 
@@ -159,7 +159,11 @@ function TransbankReturnContent() {
     return (
       <div className="min-h-screen bg-[#f6f4f2] flex items-center justify-center">
         <div className="bg-white p-8 rounded-lg shadow-md text-center max-w-md">
-          <div className="text-red-500 text-6xl mb-4">❌</div>
+          <div className="text-red-500 text-6xl mb-4">
+            <svg className="w-24 h-24 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </div>
           <h2 className="text-xl font-bold text-red-600 mb-4">Error en el Pago</h2>
           <p className="text-gray-600 mb-6">{error}</p>
           <button
@@ -178,7 +182,11 @@ function TransbankReturnContent() {
     return (
       <div className="min-h-screen bg-[#f6f4f2] flex items-center justify-center">
         <div className="bg-white p-8 rounded-lg shadow-md text-center max-w-md">
-          <div className="text-yellow-500 text-6xl mb-4">⚠️</div>
+          <div className="text-yellow-500 text-6xl mb-4">
+            <svg className="w-24 h-24 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
           <h2 className="text-xl font-bold text-yellow-600 mb-4">Pago Cancelado</h2>
           <p className="text-gray-600 mb-4">Cancelaste el proceso de pago.</p>
           <p className="text-gray-600 mb-6">Tu reserva queda pendiente. Puedes completar el pago desde &quot;Mis Reservas&quot;.</p>
@@ -214,7 +222,11 @@ function TransbankReturnContent() {
           </>
         ) : (
           <>
-            <div className="text-red-500 text-6xl mb-4">❌</div>
+            <div className="text-red-500 text-6xl mb-4">
+              <svg className="w-24 h-24 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </div>
             <h2 className="text-xl font-bold text-red-600 mb-4">Pago Rechazado</h2>
             <p className="text-gray-600 mb-4">Tu pago no pudo ser procesado.</p>
             <div className="bg-gray-50 p-4 rounded-lg mb-6 text-left">
