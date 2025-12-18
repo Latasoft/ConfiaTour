@@ -1,5 +1,6 @@
 'use client'
 import { useState } from 'react'
+import Image from 'next/image'
 
 export default function HeroSection() {
   const [searchData, setSearchData] = useState({
@@ -18,10 +19,13 @@ export default function HeroSection() {
     <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden">
       {/* Image Background */}
       <div className="absolute inset-0 z-0">
-        <img 
+        <Image 
           src="https://wallpapers.com/images/high/paine-river-in-chile-nswveb4wuk79w7gs.webp"
           alt="Paine River in Chile"
-          className="w-full h-full object-cover filter contrast-105 saturate-105"
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover filter contrast-105 saturate-105"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-black/30 to-[#f6f4f2]/80"></div>
       </div>

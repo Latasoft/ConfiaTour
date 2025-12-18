@@ -160,7 +160,7 @@ export const CreateExperienciaModal: React.FC<CreateExperienciaModalProps> = ({
               filterByType="guia"
             />
             <p className="text-xs text-gray-500 mt-1">
-              Solo se muestran usuarios tipo "guía"
+              Solo se muestran usuarios tipo &quot;guía&quot;
             </p>
           </div>
 

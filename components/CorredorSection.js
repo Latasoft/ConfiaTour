@@ -1,4 +1,5 @@
 import { RoadIcon, ClockIcon, ShipIcon, FlagIcon } from './icons'
+import Image from 'next/image'
 
 export default function CorredorSection() {
   const countries = [
@@ -105,10 +106,12 @@ export default function CorredorSection() {
               className="group relative overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-500 hover:-translate-y-2"
             >
               <div className="aspect-[4/5] relative">
-                <img 
+                <Image 
                   src={country.image} 
                   alt={country.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  fill
+                  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                  className="object-cover group-hover:scale-110 transition-transform duration-700"
                 />
                 <div className={`absolute inset-0 bg-gradient-to-t ${country.color} opacity-80`}></div>
                 <div className="absolute inset-0 bg-black/20"></div>
