@@ -5,14 +5,13 @@ import { supabase } from '../../lib/supabaseClient';
 import Navbar from '../../components/Navbar';
 import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import Image from 'next/image';
 import { useToast } from '@/lib/context/ToastContext';
 
 export const dynamic = 'force-dynamic'
 
 export default function PerfilPage() {
   const { user, isLoaded } = useUser();
-  const searchParams = useSearchParams();
   const { success } = useToast();
   const [profile, setProfile] = useState(null);
   const [verificationRequest, setVerificationRequest] = useState(null);
@@ -29,15 +28,18 @@ export default function PerfilPage() {
     if (isLoaded && user) {
       fetchProfile();
       fetchVerificationStatus();
+      
+      // Mostrar mensaje de éxito si viene de enviar verificación
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('verification') === 'submitted') {
+          success('Solicitud de verificación enviada correctamente. Te notificaremos cuando sea revisada.');
+          // Limpiar el parámetro de la URL
+          window.history.replaceState({}, '', '/perfil');
+        }
+      }
     }
-  }, [isLoaded, user]);
-
-  useEffect(() => {
-    // Mostrar mensaje de éxito si viene de enviar verificación
-    if (searchParams.get('verification') === 'submitted') {
-      success('Solicitud de verificación enviada correctamente. Te notificaremos cuando sea revisada.');
-    }
-  }, [searchParams, success]);
+  }, [isLoaded, user, success]);
 
   const fetchProfile = async () => {
     try {
@@ -193,11 +195,12 @@ export default function PerfilPage() {
           {/* Header del perfil */}
           <div className="bg-gradient-to-r from-blue-600 to-purple-600 px-6 py-8">
             <div className="flex items-center space-x-6">
-              <div className="relative">
-                <img
+              <div className="relative w-24 h-24">
+                <Image
                   src={user?.imageUrl || '/default-avatar.png'}
                   alt="Avatar"
-                  className="w-24 h-24 rounded-full border-4 border-white shadow-lg"
+                  fill
+                  className="rounded-full border-4 border-white shadow-lg object-cover"
                 />
                 {profile?.verified && (
                   <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-1">
