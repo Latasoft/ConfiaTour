@@ -206,7 +206,7 @@ function TransbankReturnContent() {
       <div className="bg-white p-8 rounded-lg shadow-md text-center max-w-md">
         {resultado?.exitoso ? (
           <>
-            <div className="text-green-500 text-6xl mb-4">✅</div>
+            <div className="text-green-500 text-6xl mb-4"></div>
             <h2 className="text-xl font-bold text-green-600 mb-4">¡Pago Exitoso!</h2>
             <p className="text-gray-600 mb-4">Tu reserva ha sido confirmada exitosamente.</p>
             <div className="bg-gray-50 p-4 rounded-lg mb-6 text-left">

@@ -53,6 +53,19 @@ export class ReservaService {
 
     console.log('✅ Service: Datos validados:', JSON.stringify(validation.data, null, 2))
 
+    // VALIDACIÓN DE CAPACIDAD DISPONIBLE
+    const disponible = await experienciaService.getCapacidadDisponible(
+      validation.data.experiencia_id,
+      validation.data.fecha_experiencia
+    )
+
+    if (validation.data.cantidad_personas > disponible) {
+      throw new ValidationError(
+        `Solo quedan ${disponible} cupos disponibles para esta fecha. ` +
+        `Solicitaste ${validation.data.cantidad_personas} persona${validation.data.cantidad_personas > 1 ? 's' : ''}.`
+      )
+    }
+
     // Usar los datos validados (Zod los limpia y transforma)
     const reserva = await this.repository.create(validation.data)
     

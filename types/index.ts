@@ -41,13 +41,20 @@ export interface Reserva {
   fecha_experiencia: string
   cantidad_personas: number
   precio_total: number
+  moneda: Moneda
   estado: EstadoReserva
   metodo_pago: MetodoPago
   pagado: boolean
+  mensaje_usuario?: string
   buy_order?: string
   session_id?: string
   codigo_autorizacion?: string
   fecha_pago?: string
+  creado_en: string
+  usuario?: {
+    nombre_completo: string
+    email: string
+  }
   fecha_cancelacion?: string
   detalles_pago?: any
   creado_en: string

@@ -5,6 +5,11 @@ import { supabase } from '../../lib/supabaseClient'
 import { getImageUrl } from '../../lib/uploadImages'
 import Link from 'next/link'
 import Image from 'next/image'
+import { EditExperienciaGuiaModal } from '../../components/guia/EditExperienciaGuiaModal'
+import { ReservasListView } from '../../components/guia/ReservasListView'
+import { ExperienciaStats } from '../../components/guia/ExperienciaStats'
+import { CalendarioReservas } from '../../components/guia/CalendarioReservas'
+import { BloqueoFechas } from '../../components/guia/BloqueoFechas'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,6 +17,14 @@ export default function MisExperienciasPage() {
   const [experiencias, setExperiencias] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [experienciaToEdit, setExperienciaToEdit] = useState(null)
+  const [showReservasModal, setShowReservasModal] = useState(false)
+  const [experienciaReservas, setExperienciaReservas] = useState(null)
+  const [showCalendarioModal, setShowCalendarioModal] = useState(false)
+  const [experienciaCalendario, setExperienciaCalendario] = useState(null)
+  const [showBloqueosModal, setShowBloqueosModal] = useState(false)
+  const [experienciaBloqueos, setExperienciaBloqueos] = useState(null)
   
   const { user, isLoaded: userLoaded } = useUser()
 
@@ -81,7 +94,7 @@ export default function MisExperienciasPage() {
         .from('experiencias')
         .delete()
         .eq('id', id)
-        .eq('user_id', user.id) // Seguridad adicional
+        .eq('usuario_id', user.id) // Seguridad adicional
 
       if (error) throw error
 
@@ -91,6 +104,66 @@ export default function MisExperienciasPage() {
     } catch (error) {
       console.error('Error eliminando experiencia:', error)
       alert('Error al eliminar la experiencia')
+    }
+  }
+
+  // Función para abrir modal de edición
+  const handleEditarExperiencia = (experiencia) => {
+    setExperienciaToEdit(experiencia)
+    setShowEditModal(true)
+  }
+
+  // Función de callback cuando se edita exitosamente
+  const handleEditSuccess = (experienciaActualizada) => {
+    setExperiencias(prev => 
+      prev.map(exp => exp.id === experienciaActualizada.id ? experienciaActualizada : exp)
+    )
+  }
+
+  // Función para ver reservas
+  const handleVerReservas = (experiencia) => {
+    setExperienciaReservas(experiencia)
+    setShowReservasModal(true)
+  }
+
+  // Función para ver calendario
+  const handleVerCalendario = (experiencia) => {
+    setExperienciaCalendario(experiencia)
+    setShowCalendarioModal(true)
+  }
+
+  // Función para gestionar bloqueos
+  const handleGestionarBloqueos = (experiencia) => {
+    setExperienciaBloqueos(experiencia)
+    setShowBloqueosModal(true)
+  }
+
+  // Función para cambiar disponibilidad
+  const handleToggleDisponibilidad = async (experiencia) => {
+    try {
+      const nuevoEstado = !experiencia.disponible
+
+      const { error } = await supabase
+        .from('experiencias')
+        .update({ disponible: nuevoEstado })
+        .eq('id', experiencia.id)
+        .eq('usuario_id', user.id) // Seguridad: solo el dueño
+
+      if (error) throw error
+
+      // Actualizar lista local
+      setExperiencias(prev =>
+        prev.map(exp => 
+          exp.id === experiencia.id 
+            ? { ...exp, disponible: nuevoEstado }
+            : exp
+        )
+      )
+
+      alert(`Experiencia ${nuevoEstado ? 'activada' : 'desactivada'} exitosamente`)
+    } catch (error) {
+      console.error('Error cambiando disponibilidad:', error)
+      alert('Error al cambiar la disponibilidad')
     }
   }
 
@@ -175,17 +248,30 @@ export default function MisExperienciasPage() {
                       
                       {/* Badge de estado */}
                       <div className="absolute top-2 right-2">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          exp.disponible 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-red-100 text-red-800'
-                        }`}>
-                          {exp.disponible ? 'Disponible' : 'No disponible'}
-                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault()
+                            handleToggleDisponibilidad(exp)
+                          }}
+                          className={`px-3 py-1 rounded-full text-xs font-medium transition-colors ${
+                            exp.disponible 
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                              : 'bg-red-100 text-red-800 hover:bg-red-200'
+                          }`}
+                          title={`Click para ${exp.disponible ? 'desactivar' : 'activar'}`}
+                        >
+                          {exp.disponible ? '✓ Disponible' : '✕ No disponible'}
+                        </button>
                       </div>
                     </div>
 
                     <div className="p-6">
+                      {/* Estadísticas */}
+                      <ExperienciaStats 
+                        experienciaId={exp.id} 
+                        moneda={exp.moneda}
+                      />
+
                       <div className="flex items-center justify-between mb-2">
                         <span className="bg-gray-100 text-gray-800 text-xs px-2 py-1 rounded-full">
                           {exp.categoria}
@@ -216,6 +302,39 @@ export default function MisExperienciasPage() {
                         </span>
                       </div>
 
+                      {/* Botón Ver Reservas */}
+                      <button
+                        onClick={() => handleVerReservas(exp)}
+                        className="w-full mb-2 bg-blue-50 text-blue-700 py-2 px-4 rounded-lg font-medium hover:bg-blue-100 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
+                        Ver Reservas
+                      </button>
+
+                      {/* Botón Ver Calendario */}
+                      <button
+                        onClick={() => handleVerCalendario(exp)}
+                        className="w-full mb-2 bg-purple-50 text-purple-700 py-2 px-4 rounded-lg font-medium hover:bg-purple-100 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                        Ver Calendario
+                      </button>
+
+                      {/* Botón Gestionar Bloqueos */}
+                      <button
+                        onClick={() => handleGestionarBloqueos(exp)}
+                        className="w-full mb-2 bg-red-50 text-red-700 py-2 px-4 rounded-lg font-medium hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
+                        </svg>
+                        Bloquear Fechas
+                      </button>
+
                       <div className="flex gap-2">
                         <Link 
                           href={`/experiencias/${exp.id}`}
@@ -224,8 +343,18 @@ export default function MisExperienciasPage() {
                           Ver Detalle
                         </Link>
                         <button
+                          onClick={() => handleEditarExperiencia(exp)}
+                          className="px-3 py-2 border border-[#23A69A] text-[#23A69A] rounded-lg hover:bg-teal-50 transition-colors"
+                          title="Editar experiencia"
+                        >
+                          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
                           onClick={() => handleEliminarExperiencia(exp.id)}
                           className="px-3 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 transition-colors"
+                          title="Eliminar experiencia"
                         >
                           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -258,6 +387,50 @@ export default function MisExperienciasPage() {
           )}
         </div>
       </main>
+
+      {/* Modal de edición */}
+      <EditExperienciaGuiaModal
+        isOpen={showEditModal}
+        experiencia={experienciaToEdit}
+        onClose={() => {
+          setShowEditModal(false)
+          setExperienciaToEdit(null)
+        }}
+        onSuccess={handleEditSuccess}
+      />
+
+      {/* Modal de reservas */}
+      {showReservasModal && experienciaReservas && (
+        <ReservasListView
+          experienciaId={experienciaReservas.id}
+          onClose={() => {
+            setShowReservasModal(false)
+            setExperienciaReservas(null)
+          }}
+        />
+      )}
+
+      {/* Modal de calendario */}
+      {showCalendarioModal && experienciaCalendario && (
+        <CalendarioReservas
+          experienciaId={experienciaCalendario.id}
+          onClose={() => {
+            setShowCalendarioModal(false)
+            setExperienciaCalendario(null)
+          }}
+        />
+      )}
+
+      {/* Modal de bloqueos */}
+      {showBloqueosModal && experienciaBloqueos && (
+        <BloqueoFechas
+          experienciaId={experienciaBloqueos.id}
+          onClose={() => {
+            setShowBloqueosModal(false)
+            setExperienciaBloqueos(null)
+          }}
+        />
+      )}
     </div>
   )
 }

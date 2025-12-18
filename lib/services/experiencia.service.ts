@@ -3,6 +3,7 @@ import { Experiencia, FiltrosExperiencias } from '@/types'
 import { validateData, experienciaCreateSchema, filtrosSchema } from '../schemas'
 import { ValidationError } from '../utils/errors'
 import { parseImagenes } from '../utils/image.utils'
+import { supabase } from '../db/supabase'
 
 export class ExperienciaService {
   private repository: ExperienciaRepository
@@ -147,6 +148,40 @@ export class ExperienciaService {
         ...exp,
         imagenes: parseImagenes(exp.imagenes)
       }))
+  }
+
+  /**
+   * Calcula la capacidad disponible para una experiencia en una fecha específica
+   * Resta las reservas confirmadas/pendientes de la capacidad total
+   */
+  async getCapacidadDisponible(
+    experienciaId: string, 
+    fecha: string
+  ): Promise<number> {
+    // 1. Obtener capacidad total de la experiencia
+    const experiencia = await this.repository.getById(experienciaId)
+    const capacidadTotal = experiencia.capacidad
+
+    // 2. Sumar personas ya reservadas para esa fecha
+    const { data: reservas, error } = await supabase
+      .from('reservas')
+      .select('cantidad_personas')
+      .eq('experiencia_id', experienciaId)
+      .eq('fecha_experiencia', fecha)
+      .in('estado', ['confirmada', 'pendiente_pago']) // No contar canceladas ni completadas
+
+    if (error) {
+      console.error('Error consultando reservas:', error)
+      throw new Error('Error al calcular capacidad disponible')
+    }
+
+    const personasReservadas = reservas?.reduce(
+      (total, r) => total + r.cantidad_personas, 
+      0
+    ) || 0
+
+    // 3. Retornar cupos disponibles (nunca negativo)
+    return Math.max(0, capacidadTotal - personasReservadas)
   }
 }
 

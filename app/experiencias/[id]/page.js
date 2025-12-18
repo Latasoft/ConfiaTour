@@ -36,6 +36,8 @@ export default function DetalleExperienciaPage() {
   const [loading, setLoading] = useState(true)
   const [cantidadPersonas, setCantidadPersonas] = useState(1)
   const [fechaReserva, setFechaReserva] = useState('') // Nueva fecha de reserva
+  const [capacidadDisponible, setCapacidadDisponible] = useState(null) // Cupos disponibles
+  const [consultandoDisponibilidad, setConsultandoDisponibilidad] = useState(false)
   const [showReservaModal, setShowReservaModal] = useState(false)
   const [procesandoPago, setProcesandoPago] = useState(false)
   
@@ -67,6 +69,38 @@ export default function DetalleExperienciaPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const consultarDisponibilidad = async (fecha) => {
+    if (!fecha || !id) return
+
+    try {
+      setConsultandoDisponibilidad(true)
+      const response = await fetch(`/api/experiencias/${id}/disponibilidad?fecha=${fecha}`)
+      const result = await response.json()
+
+      if (result.success) {
+        setCapacidadDisponible(result.disponible)
+        
+        // Ajustar cantidad de personas si excede disponibilidad
+        if (cantidadPersonas > result.disponible) {
+          setCantidadPersonas(Math.min(1, result.disponible))
+        }
+      } else {
+        console.error('Error consultando disponibilidad:', result.error)
+        setCapacidadDisponible(null)
+      }
+    } catch (error) {
+      console.error('Error consultando disponibilidad:', error)
+      setCapacidadDisponible(null)
+    } finally {
+      setConsultandoDisponibilidad(false)
+    }
+  }
+
+  const handleFechaChange = (fecha) => {
+    setFechaReserva(fecha)
+    consultarDisponibilidad(fecha)
   }
 
   const handleReservar = async () => {
@@ -403,37 +437,63 @@ export default function DetalleExperienciaPage() {
 
                 <div className="mb-4">
                   <label className="block text-sm font-medium mb-2">
+                    Fecha de la experiencia
+                  </label>
+                  <input
+                    type="date"
+                    value={fechaReserva}
+                    onChange={(e) => handleFechaChange(e.target.value)}
+                    min={experiencia.fecha_inicio}
+                    max={experiencia.fecha_fin}
+                    className="w-full p-2 border border-gray-300 rounded-lg"
+                    required
+                  />
+                  {consultandoDisponibilidad && (
+                    <p className="text-xs text-blue-600 mt-1">
+                      Consultando disponibilidad...
+                    </p>
+                  )}
+                  {fechaReserva && capacidadDisponible !== null && !consultandoDisponibilidad && (
+                    <p className={`text-xs mt-1 ${capacidadDisponible === 0 ? 'text-red-600' : capacidadDisponible <= 5 ? 'text-amber-600' : 'text-green-600'}`}>
+                      {capacidadDisponible === 0 
+                        ? '⚠️ Sin cupos disponibles para esta fecha'
+                        : capacidadDisponible <= 5
+                        ? `⚠️ Solo quedan ${capacidadDisponible} cupos disponibles`
+                        : `✓ ${capacidadDisponible} cupos disponibles`
+                      }
+                    </p>
+                  )}
+                </div>
+
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">
                     Cantidad de personas
                   </label>
                   <select
                     value={cantidadPersonas}
                     onChange={(e) => setCantidadPersonas(parseInt(e.target.value))}
                     className="w-full p-2 border border-gray-300 rounded-lg"
+                    disabled={!fechaReserva || capacidadDisponible === 0}
                   >
-                    {[...Array(experiencia.capacidad)].map((_, i) => (
-                      <option key={i + 1} value={i + 1}>
-                        {i + 1} persona{i > 0 ? 's' : ''}
-                      </option>
-                    ))}
+                    {capacidadDisponible !== null && fechaReserva ? (
+                      [...Array(Math.min(experiencia.capacidad, capacidadDisponible))].map((_, i) => (
+                        <option key={i + 1} value={i + 1}>
+                          {i + 1} persona{i > 0 ? 's' : ''}
+                        </option>
+                      ))
+                    ) : (
+                      [...Array(experiencia.capacidad)].map((_, i) => (
+                        <option key={i + 1} value={i + 1}>
+                          {i + 1} persona{i > 0 ? 's' : ''}
+                        </option>
+                      ))
+                    )}
                   </select>
-                </div>
-
-                <div className="mb-4">
-                  <label className="block text-sm font-medium mb-2">
-                    Fecha de la experiencia
-                  </label>
-                  <input
-                    type="date"
-                    value={fechaReserva}
-                    onChange={(e) => setFechaReserva(e.target.value)}
-                    min={experiencia.fecha_inicio}
-                    max={experiencia.fecha_fin}
-                    className="w-full p-2 border border-gray-300 rounded-lg"
-                    required
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Disponible desde {new Date(experiencia.fecha_inicio).toLocaleDateString()} hasta {new Date(experiencia.fecha_fin).toLocaleDateString()}
-                  </p>
+                  {!fechaReserva && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Selecciona una fecha primero
+                    </p>
+                  )}
                 </div>
 
                 <div className="mb-4 p-3 bg-gray-50 rounded-lg">
