@@ -1,6 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { useUser, useSession } from '@clerk/nextjs';
+import Image from 'next/image';
 import { supabase, createClerkSupabaseClient } from '../../../lib/supabaseClient';
 import { uploadVerificationImage } from '../../../lib/uploadImages';
 import Navbar from '../../../components/Navbar';
@@ -367,9 +368,11 @@ export default function VerificarPage() {
               ) : (
                 <div className="relative max-w-md mx-auto">
                   {idDocumentPreview ? (
-                    <img
+                    <Image
                       src={idDocumentPreview}
                       alt="Documento de identidad"
+                      width={500}
+                      height={300}
                       className="w-full rounded-lg border-2 border-gray-200"
                     />
                   ) : (
@@ -437,7 +440,7 @@ export default function VerificarPage() {
                     <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
                       <div className="flex items-center space-x-3">
                         {doc.type === 'image' ? (
-                          <img src={doc.url} alt={doc.name} className="h-16 w-16 object-cover rounded" />
+                          <Image src={doc.url} alt={doc.name} width={64} height={64} className="h-16 w-16 object-cover rounded" />
                         ) : (
                           <svg className="h-16 w-16 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clipRule="evenodd" />

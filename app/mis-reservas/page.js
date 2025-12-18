@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect, Suspense } from 'react'
+import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useUser } from '@clerk/nextjs'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useToast } from '@/lib/context/ToastContext'
@@ -30,13 +30,7 @@ function MisReservasContent() {
     }
   }, [searchParams])
 
-  useEffect(() => {
-    if (user) {
-      cargarReservas()
-    }
-  }, [user])
-
-  const cargarReservas = async () => {
+  const cargarReservas = useCallback(async () => {
     try {
       setLoading(true)
       // ✅ Usar nueva API - no requiere usuario_id
@@ -54,7 +48,13 @@ function MisReservasContent() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [router])
+
+  useEffect(() => {
+    if (user) {
+      cargarReservas()
+    }
+  }, [user, cargarReservas])
 
   const handleCancelarReserva = async () => {
     if (!reservaACancelar) return

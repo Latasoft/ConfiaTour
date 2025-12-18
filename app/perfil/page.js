@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { supabase } from '../../lib/supabaseClient';
 import Navbar from '../../components/Navbar';
@@ -24,24 +24,9 @@ export default function PerfilPage() {
     user_type: 'viajero'
   });
 
-  useEffect(() => {
-    if (isLoaded && user) {
-      fetchProfile();
-      fetchVerificationStatus();
-      
-      // Mostrar mensaje de éxito si viene de enviar verificación
-      if (typeof window !== 'undefined') {
-        const params = new URLSearchParams(window.location.search);
-        if (params.get('verification') === 'submitted') {
-          success('Solicitud de verificación enviada correctamente. Te notificaremos cuando sea revisada.');
-          // Limpiar el parámetro de la URL
-          window.history.replaceState({}, '', '/perfil');
-        }
-      }
-    }
-  }, [isLoaded, user, success]);
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
+    if (!user?.id) return
+    
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -69,9 +54,11 @@ export default function PerfilPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
-  const fetchVerificationStatus = async () => {
+  const fetchVerificationStatus = useCallback(async () => {
+    if (!user?.id) return
+    
     try {
       const { data, error } = await supabase
         .from('verification_requests')
@@ -88,6 +75,26 @@ export default function PerfilPage() {
 
       setVerificationRequest(data);
     } catch (error) {
+      console.error('Error fetching verification status:', error);
+    }
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (isLoaded && user) {
+      fetchProfile();
+      fetchVerificationStatus();
+      
+      // Mostrar mensaje de éxito si viene de enviar verificación
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('verification') === 'submitted') {
+          success('Solicitud de verificación enviada correctamente. Te notificaremos cuando sea revisada.');
+          // Limpiar el parámetro de la URL
+          window.history.replaceState({}, '', '/perfil');
+        }
+      }
+    }
+  }, [isLoaded, user, success, fetchProfile, fetchVerificationStatus]);
       console.error('Error fetching verification status:', error);
     }
   };

@@ -44,6 +44,11 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       setUploading(true)
       setUploadProgress(`Subiendo ${files.length} imagen(es)...`)
 
+      // Validar que haya sesión
+      if (!session) {
+        throw new Error('No hay sesión activa')
+      }
+
       // Crear cliente autenticado de Supabase con token de Clerk
       const authenticatedSupabase = await createClerkSupabaseClient(session)
 

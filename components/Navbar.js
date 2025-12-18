@@ -1,6 +1,6 @@
 'use client'
 import Link from 'next/link'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import {
   SignInButton,
   SignUpButton,
@@ -26,21 +26,9 @@ export default function Navbar() {
   const [userProfile, setUserProfile] = useState(null)
   const { user, isLoaded } = useUser()
 
-  // Verificar si el usuario es admin y obtener perfil
-  useEffect(() => {
-    if (isLoaded && user) {
-      const userEmail = user.emailAddresses[0]?.emailAddress?.toLowerCase()
-      setIsAdmin(userEmail ? ADMIN_EMAILS.includes(userEmail) : false)
-      
-      // Obtener perfil del usuario
-      fetchUserProfile()
-    } else {
-      setIsAdmin(false)
-      setUserProfile(null)
-    }
-  }, [isLoaded, user])
-
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
+    if (!user?.id) return
+    
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -54,7 +42,21 @@ export default function Navbar() {
     } catch (error) {
       console.error('Error fetching user profile:', error)
     }
-  }
+  }, [user?.id])
+
+  // Verificar si el usuario es admin y obtener perfil
+  useEffect(() => {
+    if (isLoaded && user) {
+      const userEmail = user.emailAddresses[0]?.emailAddress?.toLowerCase()
+      setIsAdmin(userEmail ? ADMIN_EMAILS.includes(userEmail) : false)
+      
+      // Obtener perfil del usuario
+      fetchUserProfile()
+    } else {
+      setIsAdmin(false)
+      setUserProfile(null)
+    }
+  }, [isLoaded, user, fetchUserProfile])
 
   const isVerifiedGuide = userProfile?.user_type === 'guia' && userProfile?.verified
 
