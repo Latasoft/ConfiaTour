@@ -52,7 +52,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({
       // Crear cliente autenticado de Supabase con token de Clerk
       const authenticatedSupabase = await createClerkSupabaseClient(session)
 
-      const uploadedImages = await uploadMultipleImages(files, userId, 'experiencias', authenticatedSupabase)
+      const uploadedImages = await uploadMultipleImages(files, userId, 'experiencias', authenticatedSupabase as any)
       
       const newImages: ImageData[] = uploadedImages.map(img => ({
         url: img.url,

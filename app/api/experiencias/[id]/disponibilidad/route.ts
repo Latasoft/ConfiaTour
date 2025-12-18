@@ -7,9 +7,10 @@ import { experienciaService } from '@/lib/services/experiencia.service'
  */
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params
     const { searchParams } = new URL(req.url)
     const fecha = searchParams.get('fecha')
 
@@ -36,7 +37,7 @@ export async function GET(
     }
 
     const disponible = await experienciaService.getCapacidadDisponible(
-      params.id,
+      id,
       fecha
     )
 
@@ -44,7 +45,7 @@ export async function GET(
       success: true,
       disponible,
       fecha,
-      experiencia_id: params.id
+      experiencia_id: id
     })
 
   } catch (error: any) {

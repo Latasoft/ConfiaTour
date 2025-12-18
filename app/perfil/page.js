@@ -95,9 +95,6 @@ export default function PerfilPage() {
       }
     }
   }, [isLoaded, user, success, fetchProfile, fetchVerificationStatus]);
-      console.error('Error fetching verification status:', error);
-    }
-  };
 
   const createProfile = async () => {
     const newProfile = {
