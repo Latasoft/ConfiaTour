@@ -10,7 +10,6 @@ import { EditExperienciaGuiaModal } from '../../components/guia/EditExperienciaG
 import { ReservasListView } from '../../components/guia/ReservasListView'
 import { ExperienciaStats } from '../../components/guia/ExperienciaStats'
 import { CalendarioReservas } from '../../components/guia/CalendarioReservas'
-import { BloqueoFechas } from '../../components/guia/BloqueoFechas'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,8 +23,6 @@ export default function MisExperienciasPage() {
   const [experienciaReservas, setExperienciaReservas] = useState(null)
   const [showCalendarioModal, setShowCalendarioModal] = useState(false)
   const [experienciaCalendario, setExperienciaCalendario] = useState(null)
-  const [showBloqueosModal, setShowBloqueosModal] = useState(false)
-  const [experienciaBloqueos, setExperienciaBloqueos] = useState(null)
   const [userProfile, setUserProfile] = useState(null)
   const [checkingPermissions, setCheckingPermissions] = useState(true)
   
@@ -180,12 +177,6 @@ export default function MisExperienciasPage() {
   const handleVerCalendario = (experiencia) => {
     setExperienciaCalendario(experiencia)
     setShowCalendarioModal(true)
-  }
-
-  // Función para gestionar bloqueos
-  const handleGestionarBloqueos = (experiencia) => {
-    setExperienciaBloqueos(experiencia)
-    setShowBloqueosModal(true)
   }
 
   // Función para cambiar disponibilidad
@@ -407,17 +398,6 @@ export default function MisExperienciasPage() {
                         Ver Calendario
                       </button>
 
-                      {/* Botón Gestionar Bloqueos */}
-                      <button
-                        onClick={() => handleGestionarBloqueos(exp)}
-                        className="w-full mb-2 bg-red-50 text-red-700 py-2 px-4 rounded-lg font-medium hover:bg-red-100 transition-colors flex items-center justify-center gap-2"
-                      >
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                        </svg>
-                        Bloquear Fechas
-                      </button>
-
                       <div className="flex gap-2">
                         <Link 
                           href={`/experiencias/${exp.id}`}
@@ -500,17 +480,6 @@ export default function MisExperienciasPage() {
           onClose={() => {
             setShowCalendarioModal(false)
             setExperienciaCalendario(null)
-          }}
-        />
-      )}
-
-      {/* Modal de bloqueos */}
-      {showBloqueosModal && experienciaBloqueos && (
-        <BloqueoFechas
-          experienciaId={experienciaBloqueos.id}
-          onClose={() => {
-            setShowBloqueosModal(false)
-            setExperienciaBloqueos(null)
           }}
         />
       )}

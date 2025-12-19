@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabaseClient'
 import { Reserva } from '@/types'
 
 interface ReservasListViewProps {
@@ -37,28 +36,22 @@ export const ReservasListView: React.FC<ReservasListViewProps> = ({
       setLoading(true)
       setError(null)
 
-      // Consultar reservas de esta experiencia con información del usuario
-      const { data, error: queryError } = await supabase
-        .from('reservas')
-        .select(`
-          *,
-          profiles!reservas_usuario_id_fkey (
-            full_name,
-            email,
-            phone
-          )
-        `)
-        .eq('experiencia_id', experienciaId)
-        .order('fecha_experiencia', { ascending: false })
-
-      if (queryError) {
-        console.error('Error loading reservas:', queryError)
-        throw new Error(queryError.message)
+      // Llamar al API server-side que usa supabaseAdmin (bypasea RLS)
+      const response = await fetch(`/api/experiencias/${experienciaId}/reservas`)
+      
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Error al cargar reservas')
       }
 
-      setReservas(data || [])
+      const result = await response.json()
+
+      console.log('✅ Reservas cargadas:', result.reservas?.length || 0)
+      console.log('Datos:', result.reservas)
+      
+      setReservas(result.reservas || [])
     } catch (err: any) {
-      console.error('Error:', err)
+      console.error('❌ Error loading reservas:', err)
       setError(err.message || 'Error al cargar las reservas')
     } finally {
       setLoading(false)
@@ -78,10 +71,10 @@ export const ReservasListView: React.FC<ReservasListViewProps> = ({
     })
   }
 
-  const formatearPrecio = (precio: number, moneda: string) => {
+  const formatearPrecio = (precio: number, moneda: string = 'CLP') => {
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
-      currency: moneda
+      currency: moneda || 'CLP' // Usar CLP por defecto
     }).format(precio)
   }
 
@@ -217,7 +210,7 @@ export const ReservasListView: React.FC<ReservasListViewProps> = ({
                         {ESTADOS_CONFIG[reserva.estado as keyof typeof ESTADOS_CONFIG]?.label || reserva.estado}
                       </span>
                       <p className="text-lg font-bold text-[#23A69A] mt-1">
-                        {formatearPrecio(reserva.precio_total, reserva.moneda)}
+                        {formatearPrecio(reserva.precio_total)}
                       </p>
                     </div>
 
@@ -263,8 +256,7 @@ export const ReservasListView: React.FC<ReservasListViewProps> = ({
                   {formatearPrecio(
                     reservasFiltradas
                       .filter(r => r.estado === 'confirmada')
-                      .reduce((sum, r) => sum + r.precio_total, 0),
-                    reservasFiltradas[0]?.moneda || 'CLP'
+                      .reduce((sum, r) => sum + r.precio_total, 0)
                   )}
                 </p>
               </div>
