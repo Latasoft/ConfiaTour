@@ -158,30 +158,88 @@ export class ExperienciaService {
     experienciaId: string, 
     fecha: string
   ): Promise<number> {
+    // 🚀 OPTIMIZACIÓN: Limpieza on-demand de reservas expiradas
+    // Ejecutar ANTES de calcular disponibilidad para asegurar datos actualizados
+    await this.cleanupExpiredForExperience(experienciaId, fecha)
+
     // 1. Obtener capacidad total de la experiencia
     const experiencia = await this.repository.getById(experienciaId)
     const capacidadTotal = experiencia.capacidad
 
+    console.log(`[DISPONIBILIDAD] Consultando para experiencia ${experienciaId} en fecha ${fecha}`)
+    console.log(`[DISPONIBILIDAD] Capacidad total: ${capacidadTotal}`)
+
+    const now = new Date().toISOString()
+
     // 2. Sumar personas ya reservadas para esa fecha
+    // Incluir: confirmadas, pendiente_pago NO expiradas, y cualquier reserva pagada
     const { data: reservas, error } = await supabase
       .from('reservas')
-      .select('cantidad_personas')
+      .select('id, cantidad_personas, estado, pagado, fecha_experiencia, expires_at')
       .eq('experiencia_id', experienciaId)
       .eq('fecha_experiencia', fecha)
-      .in('estado', ['confirmada', 'pendiente_pago']) // No contar canceladas ni completadas
+      .or(`estado.eq.confirmada,and(estado.eq.pendiente_pago,expires_at.gte.${now}),pagado.eq.true`)
+      .neq('estado', 'cancelada') // Excluir explícitamente las canceladas
 
     if (error) {
       console.error('Error consultando reservas:', error)
       throw new Error('Error al calcular capacidad disponible')
     }
 
+    console.log(`[DISPONIBILIDAD] Reservas encontradas:`, reservas)
+
     const personasReservadas = reservas?.reduce(
       (total, r) => total + r.cantidad_personas, 
       0
     ) || 0
 
+    console.log(`[DISPONIBILIDAD] Personas reservadas: ${personasReservadas}`)
+
     // 3. Retornar cupos disponibles (nunca negativo)
-    return Math.max(0, capacidadTotal - personasReservadas)
+    const disponible = Math.max(0, capacidadTotal - personasReservadas)
+    console.log(`[DISPONIBILIDAD] Cupos disponibles: ${disponible}`)
+    
+    return disponible
+  }
+
+  /**
+   * Limpia reservas expiradas para una experiencia/fecha específica
+   * Más eficiente que limpiar todas las reservas
+   * Se ejecuta automáticamente antes de consultar disponibilidad
+   */
+  private async cleanupExpiredForExperience(
+    experienciaId: string,
+    fecha: string
+  ): Promise<void> {
+    const now = new Date().toISOString()
+    
+    try {
+      const { data, error } = await supabase
+        .from('reservas')
+        .update({ 
+          estado: 'cancelada',
+          fecha_cancelacion: now
+        })
+        .eq('experiencia_id', experienciaId)
+        .eq('fecha_experiencia', fecha)
+        .eq('estado', 'pendiente_pago')
+        .lt('expires_at', now)
+        .select()
+
+      if (error) {
+        console.warn('[WARN] Error en limpieza on-demand:', error)
+        // No lanzar error, continuar con el flujo
+        return
+      }
+
+      const count = data?.length || 0
+      if (count > 0) {
+        console.log(`🧹 Limpieza on-demand: ${count} reserva(s) expirada(s) cancelada(s)`)
+      }
+    } catch (error) {
+      console.warn('[WARN] Error ejecutando limpieza on-demand:', error)
+      // No interrumpir el flujo principal
+    }
   }
 }
 

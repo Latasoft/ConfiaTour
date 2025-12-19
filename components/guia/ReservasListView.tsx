@@ -42,9 +42,10 @@ export const ReservasListView: React.FC<ReservasListViewProps> = ({
         .from('reservas')
         .select(`
           *,
-          usuario:usuarios!reservas_usuario_id_fkey (
-            nombre_completo,
-            email
+          profiles!reservas_usuario_id_fkey (
+            full_name,
+            email,
+            phone
           )
         `)
         .eq('experiencia_id', experienciaId)
@@ -191,9 +192,9 @@ export const ReservasListView: React.FC<ReservasListViewProps> = ({
                     <div>
                       <p className="text-xs text-gray-500 font-medium mb-1">CLIENTE</p>
                       <p className="font-semibold text-gray-900">
-                        {reserva.usuario?.nombre_completo || 'Usuario desconocido'}
+                        {reserva.profiles?.full_name || 'Usuario desconocido'}
                       </p>
-                      <p className="text-sm text-gray-600">{reserva.usuario?.email || 'N/A'}</p>
+                      <p className="text-sm text-gray-600">{reserva.profiles?.email || 'N/A'}</p>
                     </div>
 
                     {/* Fecha de la experiencia */}

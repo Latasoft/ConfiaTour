@@ -13,9 +13,9 @@ interface ReservaCalendario {
   fecha_experiencia: string
   cantidad_personas: number
   estado: string
-  usuario?: {
-    nombre_completo: string
-  } | { nombre_completo: string }[]
+  profiles?: {
+    full_name: string
+  } | { full_name: string }[]
 }
 
 export const CalendarioReservas: React.FC<CalendarioReservasProps> = ({ 
@@ -49,8 +49,8 @@ export const CalendarioReservas: React.FC<CalendarioReservasProps> = ({
           fecha_experiencia,
           cantidad_personas,
           estado,
-          usuario:usuarios!reservas_usuario_id_fkey (
-            nombre_completo
+          profiles!reservas_usuario_id_fkey (
+            full_name
           )
         `)
         .eq('experiencia_id', experienciaId)
@@ -60,10 +60,10 @@ export const CalendarioReservas: React.FC<CalendarioReservasProps> = ({
 
       if (error) throw error
 
-      // Fix type: usuario comes as array from Supabase join, get first element
+      // Fix type: profiles comes as array from Supabase join, get first element
       const fixedData = (data || []).map(r => ({
         ...r,
-        usuario: Array.isArray(r.usuario) ? r.usuario[0] : r.usuario
+        profiles: Array.isArray(r.profiles) ? r.profiles[0] : r.profiles
       }))
       setReservas(fixedData as ReservaCalendario[])
     } catch (err: any) {
@@ -236,7 +236,7 @@ export const CalendarioReservas: React.FC<CalendarioReservasProps> = ({
                   >
                     <div>
                       <p className="font-semibold">
-                        {(Array.isArray(reserva.usuario) ? reserva.usuario[0]?.nombre_completo : reserva.usuario?.nombre_completo) || 'Usuario desconocido'}
+                        {(Array.isArray(reserva.profiles) ? reserva.profiles[0]?.full_name : reserva.profiles?.full_name) || 'Usuario desconocido'}
                       </p>
                       <p className="text-sm text-gray-600">
                         {reserva.cantidad_personas} {reserva.cantidad_personas === 1 ? 'persona' : 'personas'}

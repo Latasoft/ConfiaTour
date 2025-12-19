@@ -48,12 +48,24 @@ export default function DetalleExperienciaPage() {
     comentario: ''
   })
   const [creandoResena, setCreandoResena] = useState(false)
+  const [puedeDejarResena, setPuedeDejarResena] = useState(null) // null = no verificado, true/false = verificado
+  const [mensajeRestriccionResena, setMensajeRestriccionResena] = useState('')
 
   useEffect(() => {
     if (id) {
       cargarDatos()
     }
   }, [id])
+  
+  // Verificar elegibilidad cuando cambien user, experiencia o reseñas
+  useEffect(() => {
+    if (user && experiencia) {
+      verificarElegibilidadResena(experiencia)
+    } else if (!user) {
+      setPuedeDejarResena(null)
+      setMensajeRestriccionResena('')
+    }
+  }, [user, experiencia, resenas])
 
   const cargarDatos = async () => {
     try {
@@ -68,6 +80,53 @@ export default function DetalleExperienciaPage() {
       console.error('Error cargando datos:', error)
     } finally {
       setLoading(false)
+    }
+  }
+  
+  const verificarElegibilidadResena = async (experienciaData) => {
+    try {
+      // Verificar si ya dejó reseña
+      const yaDejoResena = resenas.some(r => r.usuario_id === user.id)
+      if (yaDejoResena) {
+        setPuedeDejarResena(false)
+        setMensajeRestriccionResena('Ya has dejado una reseña para esta experiencia')
+        return
+      }
+      
+      // Verificar si es el creador de la experiencia
+      if (experienciaData.usuario_id === user.id) {
+        setPuedeDejarResena(false)
+        setMensajeRestriccionResena('No puedes dejar reseñas en tus propias experiencias')
+        return
+      }
+      
+      // Verificar si tiene reservas completadas
+      const response = await fetch('/api/reservas')
+      const data = await response.json()
+      
+      if (data.success && data.reservas) {
+        const tieneReservaCompletada = data.reservas.some(
+          r => r.experiencia_id === id && r.estado === 'completada'
+        )
+        
+        if (!tieneReservaCompletada) {
+          setPuedeDejarResena(false)
+          setMensajeRestriccionResena('Solo puedes dejar reseñas en experiencias que hayas completado')
+          return
+        }
+        
+        // Si pasó todas las validaciones
+        setPuedeDejarResena(true)
+        setMensajeRestriccionResena('')
+      } else {
+        // Si no tiene reservas o hubo error
+        setPuedeDejarResena(false)
+        setMensajeRestriccionResena('Solo puedes dejar reseñas en experiencias que hayas completado')
+      }
+    } catch (error) {
+      console.error('Error verificando elegibilidad para reseña:', error)
+      setPuedeDejarResena(false)
+      setMensajeRestriccionResena('No se pudo verificar tu elegibilidad para dejar reseñas')
     }
   }
 
@@ -234,18 +293,33 @@ export default function DetalleExperienciaPage() {
       
       setNuevaResena({ rating: 5, comentario: '' })
       setShowResenaModal(false)
+      setPuedeDejarResena(false) // Ya dejó su reseña
       
-      alert('¡Reseña creada exitosamente!')
+      alert('✅ ¡Reseña creada exitosamente!')
     } catch (error) {
       console.error('Error creando reseña:', error)
-      alert('Error al crear la reseña')
+      
+      // Detectar errores específicos de RLS
+      const errorMessage = error.message?.toLowerCase() || ''
+      
+      if (errorMessage.includes('row-level security') || errorMessage.includes('rls') || errorMessage.includes('policy')) {
+        // Error de RLS - dar mensaje específico según el caso
+        if (experiencia?.usuario_id === user.id) {
+          alert('⚠️ No puedes dejar reseñas en tus propias experiencias.')
+        } else {
+          alert('⚠️ Solo puedes dejar reseñas en experiencias que hayas completado.\n\n' +
+                'Debes tener al menos una reserva completada para esta experiencia.')
+        }
+      } else if (errorMessage.includes('duplicate') || errorMessage.includes('ya existe')) {
+        alert('⚠️ Ya has dejado una reseña para esta experiencia.')
+      } else {
+        alert('❌ Error al crear la reseña. Por favor intenta nuevamente.\n\n' + 
+              'Si el problema persiste, contacta a soporte.')
+      }
     } finally {
       setCreandoResena(false)
     }
   }
-
-  // Verificar si el usuario ya dejó una reseña
-  const yaDeJoResena = user && resenas.some(resena => resena.usuario_id_id === user.id)
 
   // Función segura para parsear imágenes
   const parseImagenes = (imagenesData) => {
@@ -380,16 +454,33 @@ export default function DetalleExperienciaPage() {
                 </div>
               </div>
 
-              {/* Reseñas - CORREGIDO */}
+              {/* Reseñas */}
               <div className="bg-white p-6 rounded-lg shadow-md">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-bold">Reseñas ({resenas.length})</h3>
-                  {user && !yaDeJoResena && ( // ← CORREGIDO: era yaDeJoResena
+                  {user && (
+                    <>
+                      {puedeDejarResena === true && (
+                        <button
+                          onClick={() => setShowResenaModal(true)}
+                          className="bg-[#23A69A] text-white px-4 py-2 rounded-lg hover:bg-[#1e8a7e] transition-colors"
+                        >
+                          Escribir Reseña
+                        </button>
+                      )}
+                      {puedeDejarResena === false && mensajeRestriccionResena && (
+                        <div className="text-sm text-gray-500 italic">
+                          {mensajeRestriccionResena}
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {!user && (
                     <button
-                      onClick={() => setShowResenaModal(true)}
-                      className="bg-[#23A69A] text-white px-4 py-2 rounded-lg hover:bg-[#1e8a7e] transition-colors"
+                      onClick={() => window.location.href = '/sign-in'}
+                      className="bg-gray-400 text-white px-4 py-2 rounded-lg hover:bg-gray-500 transition-colors"
                     >
-                      Escribir Reseña
+                      Inicia sesión para dejar reseña
                     </button>
                   )}
                 </div>
@@ -456,10 +547,10 @@ export default function DetalleExperienciaPage() {
                   {fechaReserva && capacidadDisponible !== null && !consultandoDisponibilidad && (
                     <p className={`text-xs mt-1 ${capacidadDisponible === 0 ? 'text-red-600' : capacidadDisponible <= 5 ? 'text-amber-600' : 'text-green-600'}`}>
                       {capacidadDisponible === 0 
-                        ? '⚠️ Sin cupos disponibles para esta fecha'
+                        ? 'Sin cupos disponibles para esta fecha'
                         : capacidadDisponible <= 5
-                        ? `⚠️ Solo quedan ${capacidadDisponible} cupos disponibles`
-                        : `✓ ${capacidadDisponible} cupos disponibles`
+                        ? `Solo quedan ${capacidadDisponible} cupos disponibles`
+                        : `${capacidadDisponible} cupos disponibles`
                       }
                     </p>
                   )}

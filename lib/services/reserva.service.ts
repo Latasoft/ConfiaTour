@@ -91,33 +91,57 @@ export class ReservaService {
       ...paymentDetails
     })
 
-    // Enviar email de confirmación y comprobante de pago
-    try {
-      const emailService = await getEmailService()
-      const experiencia = await experienciaService.getExperienciaById(reserva.experiencia_id)
-      
-      if (emailService && userEmail && userName && experiencia) {
-        // Email de confirmación
-        await emailService.sendReservaConfirmation({
-          reserva,
-          experiencia,
-          usuario: {
-            nombre: userName,
-            email: userEmail
-          }
-        })
+    // 🚀 OPTIMIZACIÓN: Enviar emails de forma async (no bloquear respuesta)
+    this.sendConfirmationEmailsAsync(reserva, userEmail, userName)
+      .catch(error => {
+        console.error('[ERROR] Error en envío async de emails:', error)
+        // No afecta el flujo principal
+      })
+    
+    return reserva
+  }
 
-        // Comprobante de pago
-        await emailService.sendPaymentReceipt({
-          reserva,
-          experiencia,
-          usuario: {
-            nombre: userName,
-            email: userEmail
-          }
-        })
+  /**
+   * Envía todos los emails de confirmación en background
+   * Se ejecuta en paralelo sin bloquear la respuesta al usuario
+   */
+  private async sendConfirmationEmailsAsync(
+    reserva: Reserva,
+    userEmail?: string,
+    userName?: string
+  ): Promise<void> {
+    if (!userEmail || !userName) return
 
-        // ✅ NUEVO: Notificar al guía/proveedor
+    const emailService = await getEmailService()
+    if (!emailService) return
+
+    const experiencia = await experienciaService.getExperienciaById(reserva.experiencia_id)
+    if (!experiencia) return
+
+    // Ejecutar todos los emails EN PARALELO
+    const [confirmResult, receiptResult, providerResult] = await Promise.allSettled([
+      // 1. Email de confirmación al usuario
+      emailService.sendReservaConfirmation({
+        reserva,
+        experiencia,
+        usuario: {
+          nombre: userName,
+          email: userEmail
+        }
+      }),
+
+      // 2. Comprobante de pago al usuario
+      emailService.sendPaymentReceipt({
+        reserva,
+        experiencia,
+        usuario: {
+          nombre: userName,
+          email: userEmail
+        }
+      }),
+
+      // 3. Notificar al guía/proveedor
+      (async () => {
         try {
           const providerInfo = await experienciaRepository.getProviderEmail(reserva.experiencia_id)
           
@@ -134,18 +158,31 @@ export class ReservaService {
                 }
               }
             )
-            console.log(`✅ Notificación enviada al guía: ${providerInfo.email}`)
           }
-        } catch (providerError) {
-          console.warn('[WARN] Error enviando notificación al guía:', providerError)
+        } catch (error) {
+          console.warn('[WARN] Error enviando notificación al guía:', error)
         }
-      }
-    } catch (error) {
-      console.error('[WARN] Error enviando emails de confirmación:', error)
-      // No lanzar error para no interrumpir el flujo
+      })()
+    ])
+
+    // Log de resultados (opcional, para debugging)
+    if (confirmResult.status === 'fulfilled') {
+      console.log('✅ Email de confirmación enviado')
+    } else {
+      console.error('❌ Error en email de confirmación:', confirmResult.reason)
     }
-    
-    return reserva
+
+    if (receiptResult.status === 'fulfilled') {
+      console.log('✅ Comprobante de pago enviado')
+    } else {
+      console.error('❌ Error en comprobante:', receiptResult.reason)
+    }
+
+    if (providerResult.status === 'fulfilled') {
+      console.log('✅ Notificación al proveedor enviada')
+    } else {
+      console.error('❌ Error en notificación proveedor:', providerResult.reason)
+    }
   }
 
   /**

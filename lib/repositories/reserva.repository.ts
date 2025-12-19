@@ -11,7 +11,7 @@ export class ReservaRepository {
   }
 
   /**
-   * Obtiene todas las reservas de un usuario
+   * Obtiene todas las reservas de un usuario (excluyendo expiradas)
    */
   async getByUserId(userId: string): Promise<Reserva[]> {
     const { data, error } = await this.client
@@ -31,6 +31,7 @@ export class ReservaRepository {
         )
       `)
       .eq('usuario_id', userId)
+      .or(`estado.neq.pendiente_pago,and(estado.eq.pendiente_pago,expires_at.gte.${new Date().toISOString()})`)
       .order('fecha_reserva', { ascending: false })
 
     if (error) throw error
@@ -55,32 +56,55 @@ export class ReservaRepository {
   }
 
   /**
-   * Crea una nueva reserva
+   * Crea una nueva reserva con tiempo de expiración de 5 minutos
+   * VERSIÓN ATÓMICA: Usa función SQL con row-level locking para prevenir double booking
    */
   async create(reserva: Partial<Reserva>): Promise<Reserva> {
-    const reservaData = {
-      ...reserva,
-      estado: 'pendiente_pago' as EstadoReserva,
-      pagado: false,
-      creado_en: new Date().toISOString()
-    }
+    console.log('💾 Repository: Creando reserva atómica con validación de capacidad...')
 
-    console.log('💾 Repository: Datos a insertar en BD:', JSON.stringify(reservaData, null, 2))
-
-    const { data, error } = await this.client
-      .from('reservas')
-      .insert([reservaData])
-      .select()
-      .single()
+    // Usar función SQL atómica que previene race conditions
+    const { data, error } = await this.client.rpc('create_reserva_atomic', {
+      p_experiencia_id: reserva.experiencia_id,
+      p_usuario_id: reserva.usuario_id,
+      p_fecha_experiencia: reserva.fecha_experiencia,
+      p_cantidad_personas: reserva.cantidad_personas,
+      p_precio_total: reserva.precio_total,
+      p_metodo_pago: reserva.metodo_pago,
+      p_buy_order: reserva.buy_order,
+      p_session_id: reserva.session_id
+    })
 
     if (error) {
-      console.error('[ERROR] Repository: Error insertando reserva:', error)
+      console.error('[ERROR] Repository: Error en función atómica:', error)
       throw error
     }
-    if (!data) throw new ValidationError('No se pudo crear la reserva')
+
+    // La función retorna un array con un objeto
+    const result = Array.isArray(data) ? data[0] : data
+
+    if (!result || !result.success) {
+      console.error('[ERROR] Repository: Capacidad insuficiente:', result?.message)
+      throw new ValidationError(result?.message || 'No hay cupos disponibles')
+    }
+
+    // Obtener la reserva creada
+    const { data: reservaCreada, error: fetchError } = await this.client
+      .from('reservas')
+      .select('*')
+      .eq('id', result.reserva_id)
+      .single()
+
+    if (fetchError || !reservaCreada) {
+      console.error('[ERROR] Repository: Error obteniendo reserva creada:', fetchError)
+      throw fetchError || new Error('No se pudo obtener la reserva creada')
+    }
     
-    console.log('✅ Repository: Reserva guardada en BD:', JSON.stringify(data, null, 2))
-    return data
+    console.log('✅ Repository: Reserva creada atómicamente:', {
+      id: reservaCreada.id,
+      cupos_restantes: result.disponibles_restantes
+    })
+
+    return reservaCreada
   }
 
   /**
@@ -138,6 +162,34 @@ export class ReservaRepository {
     return this.updateStatus(id, 'cancelada', {
       fecha_cancelacion: new Date().toISOString()
     })
+  }
+
+  /**
+   * Limpia reservas pendientes expiradas
+   */
+  async cleanupExpiredReservas(): Promise<number> {
+    const now = new Date().toISOString()
+    
+    const { data, error } = await this.client
+      .from('reservas')
+      .update({ 
+        estado: 'cancelada' as EstadoReserva,
+        fecha_cancelacion: now
+      })
+      .eq('estado', 'pendiente_pago')
+      .lt('expires_at', now)
+      .select()
+
+    if (error) {
+      console.error('[ERROR] Error limpiando reservas expiradas:', error)
+      return 0
+    }
+
+    const count = data?.length || 0
+    if (count > 0) {
+      console.log(`🧹 Limpiadas ${count} reservas expiradas`)
+    }
+    return count
   }
 
   /**

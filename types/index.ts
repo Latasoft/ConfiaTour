@@ -53,9 +53,10 @@ export interface Reserva {
   fecha_cancelacion?: string
   detalles_pago?: any
   creado_en: string
-  usuario?: {
-    nombre_completo: string
+  profiles?: {
+    full_name: string
     email: string
+    phone?: string
   }
   experiencias?: Experiencia
 }

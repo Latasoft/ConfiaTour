@@ -1,10 +1,11 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useUser } from '@clerk/nextjs'
+import { useUser, useSession } from '@clerk/nextjs'
 import { ImageUploader, ImageData } from '../admin/ImageUploader'
 import { Experiencia } from '@/types'
-import { supabase } from '@/lib/supabaseClient'
+import { createClerkSupabaseClient } from '@/lib/supabaseClient'
+import { SupabaseClient } from '@supabase/supabase-js'
 
 interface EditExperienciaGuiaModalProps {
   isOpen: boolean
@@ -40,6 +41,7 @@ export const EditExperienciaGuiaModal: React.FC<EditExperienciaGuiaModalProps> =
   onSuccess
 }) => {
   const { user } = useUser()
+  const { session } = useSession()
   const [loading, setLoading] = useState(false)
   const [images, setImages] = useState<ImageData[]>([])
   const [formData, setFormData] = useState<Partial<Experiencia>>({})
@@ -83,10 +85,13 @@ export const EditExperienciaGuiaModal: React.FC<EditExperienciaGuiaModalProps> =
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!experiencia || !user) return
+    if (!experiencia || !user || !session) return
 
     try {
       setLoading(true)
+
+      // Crear cliente autenticado con JWT de Clerk
+      const supabaseClient = createClerkSupabaseClient(session) as SupabaseClient
 
       const imageUrls = images.map(img => img.url)
 
@@ -105,22 +110,25 @@ export const EditExperienciaGuiaModal: React.FC<EditExperienciaGuiaModalProps> =
         actualizado_en: new Date().toISOString()
       }
 
-      // Actualizar usando Supabase directamente con validación de usuario
-      const { data, error } = await supabase
+      // Actualizar usando Supabase con autenticación (RLS valida permisos)
+      const { data, error } = await supabaseClient
         .from('experiencias')
         .update(updateData)
         .eq('id', experiencia.id)
-        .eq('usuario_id', user.id) // Seguridad: solo el dueño puede actualizar
         .select()
-        .single()
 
       if (error) {
         console.error('Error actualizando experiencia:', error)
         throw new Error(error.message)
       }
 
+      // Verificar que se actualizó algo
+      if (!data || data.length === 0) {
+        throw new Error('No tienes permiso para editar esta experiencia o ya no existe')
+      }
+
       alert('Experiencia actualizada exitosamente')
-      onSuccess(data)
+      onSuccess(data[0])
       onClose()
 
     } catch (error: any) {

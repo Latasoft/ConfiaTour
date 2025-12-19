@@ -14,6 +14,57 @@ const getTransporter = () => {
 
 const FROM_EMAIL = process.env.GMAIL_USER || 'ConfiaTour <noreply@confiatour.cl>'
 
+/**
+ * Función helper para retry con exponential backoff
+ * Intenta ejecutar una función hasta 3 veces con delays crecientes
+ */
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  options: {
+    maxRetries?: number
+    baseDelay?: number
+    maxDelay?: number
+    operationName?: string
+  } = {}
+): Promise<T> {
+  const {
+    maxRetries = 3,
+    baseDelay = 1000,     // 1 segundo
+    maxDelay = 10000,     // 10 segundos máximo
+    operationName = 'operation'
+  } = options
+
+  let lastError: Error | null = null
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn()
+    } catch (error: any) {
+      lastError = error
+      
+      // Si es el último intento, lanzar el error
+      if (attempt === maxRetries) {
+        console.error(`[RETRY] ${operationName} falló después de ${maxRetries} intentos:`, error)
+        throw error
+      }
+
+      // Calcular delay con exponential backoff
+      const delay = Math.min(baseDelay * Math.pow(2, attempt - 1), maxDelay)
+      
+      console.warn(
+        `[RETRY] ${operationName} falló (intento ${attempt}/${maxRetries}). ` +
+        `Reintentando en ${delay}ms...`,
+        error.message
+      )
+
+      // Esperar antes de reintentar
+      await new Promise(resolve => setTimeout(resolve, delay))
+    }
+  }
+
+  throw lastError!
+}
+
 // Helpers para generar HTML de emails
 const generateConfirmacionHTML = (reserva: Reserva, experiencia: Experiencia, nombreUsuario: string) => {
   const fechaExperiencia = new Date(reserva.fecha_experiencia).toLocaleDateString('es-CL', {
@@ -142,7 +193,7 @@ const generateCancelacionAdminHTML = (reserva: Reserva, experiencia: Experiencia
     <tr>
       <td style="padding: 0 20px 20px 20px;">
         <div style="background-color: #e7f3ff; padding: 20px; border-radius: 8px; border: 1px solid #007bff;">
-          <h3 style="color: #004085; margin-top: 0;">👤 Datos del Usuario</h3>
+          <h3 style="color: #004085; margin-top: 0;">Datos del Usuario</h3>
           <p><strong>Nombre:</strong> ${nombreUsuario}</p>
           <p><strong>Email:</strong> ${emailUsuario}</p>
         </div>
@@ -151,7 +202,7 @@ const generateCancelacionAdminHTML = (reserva: Reserva, experiencia: Experiencia
     <tr>
       <td style="padding: 0 20px 30px 20px;">
         <div style="background-color: #d1ecf1; padding: 15px; border-radius: 8px; border-left: 4px solid #0c5460;">
-          <p style="margin: 0; color: #0c5460;"><strong>📌 Acción Requerida:</strong> Procesa el reembolso en Transbank y marca la transacción como reembolsada en el sistema.</p>
+          <p style="margin: 0; color: #0c5460;"><strong>Acción Requerida:</strong> Procesa el reembolso en Transbank y marca la transacción como reembolsada en el sistema.</p>
         </div>
       </td>
     </tr>
@@ -309,7 +360,7 @@ const generateProveedorHTML = (providerName: string, reserva: Reserva, experienc
   <table style="width: 100%; max-width: 600px; margin: 40px auto; background-color: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); overflow: hidden;">
     <tr>
       <td style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center;">
-        <h1 style="margin: 0; font-size: 28px;">🎉 Nueva Reserva</h1>
+        <h1 style="margin: 0; font-size: 28px;">Nueva Reserva</h1>
         <p style="margin: 10px 0 0; opacity: 0.9;">Tienes una nueva reserva confirmada</p>
       </td>
     </tr>
@@ -362,7 +413,7 @@ const generateProveedorHTML = (providerName: string, reserva: Reserva, experienc
         </div>
 
         <div style="background-color: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px; margin: 20px 0; border-radius: 4px;">
-          <h3 style="margin: 0 0 12px; color: #111827; font-size: 16px;">👤 Información del Cliente</h3>
+          <h3 style="margin: 0 0 12px; color: #111827; font-size: 16px;">Información del Cliente</h3>
           
           <div style="padding: 8px 0; border-bottom: 1px solid #fde68a;">
             <span style="color: #92400e; font-size: 14px;">Nombre</span><br>
@@ -407,25 +458,36 @@ const generateProveedorHTML = (providerName: string, reserva: Reserva, experienc
 
 export class EmailService {
   /**
-   * Envía email de confirmación de reserva
+   * Envía email de confirmación de reserva con retry automático
    */
   async sendReservaConfirmation(data: ReservaEmailData): Promise<void> {
     try {
       const { reserva, experiencia, usuario } = data
-
       const emailHtml = generateConfirmacionHTML(reserva, experiencia, usuario.nombre)
 
-      const transporter = getTransporter()
-      await transporter.sendMail({
-        from: FROM_EMAIL,
-        to: usuario.email,
-        subject: `✅ Reserva Confirmada - ${experiencia.titulo}`,
-        html: emailHtml,
-      })
+      // Enviar con retry automático
+      await withRetry(
+        async () => {
+          const transporter = getTransporter()
+          await transporter.sendMail({
+            from: FROM_EMAIL,
+            to: usuario.email,
+            subject: `Reserva Confirmada - ${experiencia.titulo}`,
+            html: emailHtml,
+          })
+        },
+        {
+          maxRetries: 3,
+          baseDelay: 1000,
+          operationName: `Email confirmación a ${usuario.email}`
+        }
+      )
 
       console.log(`✅ Email de confirmación enviado a ${usuario.email}`)
     } catch (error) {
       console.error('[ERROR] Error enviando email de confirmación:', error)
+      // Guardar en tabla de failed_emails para retry manual
+      await this.logFailedEmail('confirmacion', data, error)
       // No lanzar error para no interrumpir el flujo de reserva
     }
   }
@@ -434,58 +496,89 @@ export class EmailService {
    * Envía email de cancelación de reserva
    */
   async sendReservaCancellation(data: ReservaEmailData): Promise<void> {
-    try {
-      const { reserva, experiencia, usuario } = data
-      const transporter = getTransporter()
+    const { reserva, experiencia, usuario } = data
+    const transporter = getTransporter()
 
-      // 1. Email al usuario
+    try {
+      // 1. Email al usuario con retry
       const emailHtml = generateCancelacionHTML(reserva, experiencia, usuario.nombre)
-      await transporter.sendMail({
-        from: FROM_EMAIL,
-        to: usuario.email,
-        subject: `Reserva Cancelada - ${experiencia.titulo}`,
-        html: emailHtml,
-      })
+      
+      await withRetry(
+        async () => {
+          await transporter.sendMail({
+            from: FROM_EMAIL,
+            to: usuario.email,
+            subject: `Reserva Cancelada - ${experiencia.titulo}`,
+            html: emailHtml,
+          })
+        },
+        {
+          operationName: `Email cancelación a ${usuario.email}`
+        }
+      )
 
       console.log(`✅ Email de cancelación enviado a ${usuario.email}`)
+    } catch (error) {
+      console.error('[ERROR] Error enviando email de cancelación al usuario:', error)
+      await this.logFailedEmail('cancelacion', data, error)
+    }
 
-      // 2. Email al admin para procesar reembolso
+    try {
+      // 2. Email al admin para procesar reembolso con retry
       const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAILS || 'admin@confiatour.cl'
       const adminHtml = generateCancelacionAdminHTML(reserva, experiencia, usuario.nombre, usuario.email)
       
-      await transporter.sendMail({
-        from: FROM_EMAIL,
-        to: adminEmail,
-        subject: `[ADMIN] Reembolso Requerido - Reserva ${reserva.id.substring(0, 8)}`,
-        html: adminHtml,
-      })
+      await withRetry(
+        async () => {
+          await transporter.sendMail({
+            from: FROM_EMAIL,
+            to: adminEmail,
+            subject: `[ADMIN] Reembolso Requerido - Reserva ${reserva.id.substring(0, 8)}`,
+            html: adminHtml,
+          })
+        },
+        {
+          operationName: `Email admin reembolso`
+        }
+      )
 
       console.log(`✅ Notificación de reembolso enviada al admin: ${adminEmail}`)
     } catch (error) {
-      console.error('[ERROR] Error enviando email de cancelación:', error)
+      console.error('[ERROR] Error enviando email de reembolso al admin:', error)
+      // No logueamos el email admin en failed_emails, solo el del usuario
     }
   }
 
   /**
-   * Envía comprobante de pago electrónico
+   * Envía comprobante de pago electrónico con retry automático
    */
   async sendPaymentReceipt(data: ReservaEmailData): Promise<void> {
     try {
       const { reserva, experiencia, usuario } = data
-
       const emailHtml = generateComprobanteHTML(reserva, experiencia, usuario.nombre)
 
-      const transporter = getTransporter()
-      await transporter.sendMail({
-        from: FROM_EMAIL,
-        to: usuario.email,
-        subject: `🧾 Comprobante de Pago - ${experiencia.titulo}`,
-        html: emailHtml,
-      })
+      // Enviar con retry automático
+      await withRetry(
+        async () => {
+          const transporter = getTransporter()
+          await transporter.sendMail({
+            from: FROM_EMAIL,
+            to: usuario.email,
+            subject: `Comprobante de Pago - ${experiencia.titulo}`,
+            html: emailHtml,
+          })
+        },
+        {
+          maxRetries: 3,
+          baseDelay: 1000,
+          operationName: `Comprobante a ${usuario.email}`
+        }
+      )
 
       console.log(`✅ Comprobante de pago enviado a ${usuario.email}`)
     } catch (error) {
       console.error('[ERROR] Error enviando comprobante de pago:', error)
+      await this.logFailedEmail('comprobante', data, error)
     }
   }
 
@@ -506,13 +599,60 @@ export class EmailService {
       await transporter.sendMail({
         from: FROM_EMAIL,
         to: providerEmail,
-        subject: `🎉 Nueva Reserva - ${experiencia.titulo}`,
+        subject: `Nueva Reserva - ${experiencia.titulo}`,
         html: emailHtml,
       })
 
       console.log(`✅ Notificación de nueva reserva enviada al proveedor ${providerEmail}`)
     } catch (error) {
       console.error('[ERROR] Error enviando notificación al proveedor:', error)
+      // No guardar en failed_emails (es menos crítico)
+    }
+  }
+
+  /**
+   * Registra un email fallido para retry manual posterior
+   * Guarda en consola y base de datos para monitoreo
+   */
+  private async logFailedEmail(
+    emailType: string,
+    data: ReservaEmailData,
+    error: any
+  ): Promise<void> {
+    const failedEmailData = {
+      email_type: emailType,
+      reserva_id: data.reserva.id,
+      recipient_email: data.usuario.email,
+      recipient_name: data.usuario.nombre,
+      experiencia_id: data.experiencia.id,
+      error_message: error?.message || 'Error desconocido',
+      retry_count: 3 // Indica que ya se intentó 3 veces
+    }
+
+    // Log detallado en consola
+    console.error('📧 EMAIL FALLIDO (después de 3 reintentos):', {
+      tipo: emailType,
+      destinatario: data.usuario.email,
+      reserva: data.reserva.id,
+      error: error?.message
+    })
+
+    // Guardar en tabla failed_emails para retry manual
+    try {
+      const { supabase } = await import('../db/supabase')
+      
+      const { error: dbError } = await supabase
+        .from('failed_emails')
+        .insert([failedEmailData])
+      
+      if (dbError) {
+        console.error('[ERROR] No se pudo guardar email fallido en BD:', dbError)
+      } else {
+        console.log('✅ Email fallido registrado en BD para retry manual')
+      }
+    } catch (err) {
+      console.error('[ERROR] Error al guardar email fallido:', err)
+      // No lanzar error, continuar
     }
   }
 }

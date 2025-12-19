@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabaseClient'
 import { getImageUrl } from '../../lib/uploadImages'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { EditExperienciaGuiaModal } from '../../components/guia/EditExperienciaGuiaModal'
 import { ReservasListView } from '../../components/guia/ReservasListView'
 import { ExperienciaStats } from '../../components/guia/ExperienciaStats'
@@ -25,17 +26,66 @@ export default function MisExperienciasPage() {
   const [experienciaCalendario, setExperienciaCalendario] = useState(null)
   const [showBloqueosModal, setShowBloqueosModal] = useState(false)
   const [experienciaBloqueos, setExperienciaBloqueos] = useState(null)
+  const [userProfile, setUserProfile] = useState(null)
+  const [checkingPermissions, setCheckingPermissions] = useState(true)
   
   const { user, isLoaded: userLoaded } = useUser()
+  const router = useRouter()
 
+  // Verificar permisos del usuario
   useEffect(() => {
-    if (user) {
-      console.log('Clerk User ID:', user.id)
+    async function checkPermissions() {
+      if (!user || !userLoaded) return
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('user_type, verified')
+          .eq('clerk_user_id', user.id)
+          .maybeSingle()
+        
+        if (error) {
+          console.error('Error obteniendo perfil:', error)
+          setError('Error verificando permisos')
+          setCheckingPermissions(false)
+          return
+        }
+        
+        if (!data) {
+          setError('Perfil no encontrado')
+          setCheckingPermissions(false)
+          return
+        }
+        
+        setUserProfile(data)
+        
+        // Verificar que sea guía
+        if (data.user_type !== 'guia') {
+          setError('Solo los guías pueden acceder a esta página')
+          setCheckingPermissions(false)
+          return
+        }
+        
+        // Verificar que esté verificado
+        if (!data.verified) {
+          setError('Tu cuenta de guía aún no está verificada. Espera la aprobación del equipo.')
+          setCheckingPermissions(false)
+          return
+        }
+        
+        setCheckingPermissions(false)
+      } catch (err) {
+        console.error('Error verificando permisos:', err)
+        setError('Error verificando permisos')
+        setCheckingPermissions(false)
+      }
     }
-  }, [user])
+    
+    checkPermissions()
+  }, [user, userLoaded])
 
   useEffect(() => {
-    if (!user || !userLoaded) return
+    if (!user || !userLoaded || checkingPermissions || !userProfile) return
 
     async function loadExperiencias() {
       setLoading(true)
@@ -66,7 +116,7 @@ export default function MisExperienciasPage() {
     }
 
     loadExperiencias()
-  }, [user, userLoaded])
+  }, [user, userLoaded, checkingPermissions, userProfile])
 
   // Función para parsear imágenes
   const parseImagenes = (imagenesData) => {
@@ -168,10 +218,13 @@ export default function MisExperienciasPage() {
   }
 
   // Show loading while Clerk is initializing
-  if (!userLoaded) {
+  if (!userLoaded || checkingPermissions) {
     return (
       <div className="min-h-screen bg-[#f6f4f2] flex items-center justify-center">
-        <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#23A69A]"></div>
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#23A69A] mb-4"></div>
+          <p className="text-gray-600">Verificando permisos...</p>
+        </div>
       </div>
     )
   }
@@ -185,6 +238,36 @@ export default function MisExperienciasPage() {
           <Link href="/sign-in" className="bg-[#23A69A] text-white px-6 py-3 rounded-lg hover:bg-[#1e8a7e]">
             Iniciar Sesión
           </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // Mostrar error si no tiene permisos
+  if (error && (userProfile?.user_type !== 'guia' || !userProfile?.verified)) {
+    return (
+      <div className="min-h-screen bg-[#f6f4f2] flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <div className="bg-white rounded-xl shadow-lg p-8">
+            <div className="text-6xl mb-4">🔒</div>
+            <h2 className="text-2xl font-bold mb-4 text-gray-900">Acceso Restringido</h2>
+            <p className="text-gray-600 mb-6">{error}</p>
+            <div className="flex gap-3 justify-center">
+              <Link href="/" className="bg-gray-200 text-gray-700 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors">
+                Volver al Inicio
+              </Link>
+              {userProfile?.user_type !== 'guia' && (
+                <Link href="/perfil/verificar" className="bg-[#23A69A] text-white px-6 py-3 rounded-lg hover:bg-[#1e8a7e] transition-colors">
+                  Ser Guía
+                </Link>
+              )}
+              {userProfile?.user_type === 'guia' && !userProfile?.verified && (
+                <Link href="/perfil" className="bg-[#23A69A] text-white px-6 py-3 rounded-lg hover:bg-[#1e8a7e] transition-colors">
+                  Ver Mi Perfil
+                </Link>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     )
