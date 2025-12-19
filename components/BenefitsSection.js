@@ -26,7 +26,7 @@ export default function BenefitsSection() {
       icon: CreditCardIcon,
       title: "Pagos Seguros y Trazables",
       description: "Plataforma con reputación verificada y seguimiento de cada operación para tu tranquilidad.",
-      features: ["Mercado Pago", "Transbank", "Múltiples monedas"],
+      features: ["Webpay", "Múltiples monedas"],
       stats: "100% seguro"
     },
     {
@@ -50,13 +50,6 @@ export default function BenefitsSection() {
       features: ["Impacto social medible", "Comercio justo", "Conservación ambiental"],
       stats: "95% impacto positivo"
     },
-    {
-      icon: DevicePhoneMobileIcon,
-      title: "Gestión Simplificada",
-      description: "Sistema digital integral para reservas, pagos y coordinación logística en tiempo real.",
-      features: ["App móvil", "Notificaciones push", "Chat en vivo"],
-      stats: "24/7 disponible"
-    }
   ]
 
   const additionalBenefits = [
@@ -72,12 +65,6 @@ export default function BenefitsSection() {
       description: "Sistema de ratings y reviews que asegura experiencias de alta calidad en cada destino.",
       highlight: "Rating promedio 4.8/5"
     },
-    {
-      icon: SparklesIcon,
-      title: "Experiencias Personalizadas",
-      description: "Algoritmo inteligente que sugiere experiencias basadas en tus preferencias e historial.",
-      highlight: "IA personalizada"
-    }
   ]
 
   return (

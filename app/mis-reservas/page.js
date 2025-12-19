@@ -8,6 +8,14 @@ import { ReservasAPI } from '../../lib/api/reservas'
 
 export const dynamic = 'force-dynamic'
 
+// Función para formatear fechas sin desfase de zona horaria
+const formatDateWithoutTimezone = (dateString) => {
+  if (!dateString) return ''
+  // Tomar solo la parte de la fecha (YYYY-MM-DD) sin la hora
+  const [year, month, day] = dateString.split('T')[0].split('-')
+  return new Date(year, month - 1, day).toLocaleDateString('es-CL')
+}
+
 function MisReservasContent() {
   const { user, isLoaded } = useUser()
   const router = useRouter()
@@ -364,7 +372,7 @@ function MisReservasContent() {
                         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mb-4">
                           <div>
                             <span className="text-gray-500">Fecha experiencia:</span>
-                            <p className="font-medium">{new Date(reserva.fecha_experiencia).toLocaleDateString()}</p>
+                            <p className="font-medium">{formatDateWithoutTimezone(reserva.fecha_experiencia)}</p>
                           </div>
                           <div>
                             <span className="text-gray-500">Personas:</span>
@@ -376,7 +384,7 @@ function MisReservasContent() {
                           </div>
                           <div>
                             <span className="text-gray-500">Reservado:</span>
-                            <p className="font-medium">{new Date(reserva.fecha_reserva).toLocaleDateString()}</p>
+                            <p className="font-medium">{formatDateWithoutTimezone(reserva.fecha_reserva)}</p>
                           </div>
                         </div>
 

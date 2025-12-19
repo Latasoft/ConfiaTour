@@ -20,7 +20,7 @@ export default function ComoFuncionaPage() {
       numero: "3",
       titulo: "Reserva",
       descripcion: "Realiza tu reserva de forma segura con nuestro sistema de pagos",
-      detalle: "Paga con Mercado Pago, Transbank o transferencia bancaria en múltiples monedas"
+      detalle: "Paga con webpay en múltiples monedas"
     },
     {
       numero: "4",

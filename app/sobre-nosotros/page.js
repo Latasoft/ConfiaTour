@@ -133,7 +133,7 @@ export default function SobreNosotrosPage() {
                 </div>
                 <h3 className="text-xl font-bold mb-2">Pagos Seguros</h3>
                 <p className="text-gray-600">
-                  Sistema de pagos trazables con integración de Mercado Pago y Transbank
+                  Sistema de pagos trazables con integración de Webpay
                   para transacciones seguras en múltiples monedas.
                 </p>
               </div>

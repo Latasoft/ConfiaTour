@@ -24,6 +24,14 @@ const convertToCLP = (amount, currency) => {
   return Math.round(amount * rate)
 }
 
+// Función para formatear fechas sin desfase de zona horaria
+const formatDateWithoutTimezone = (dateString) => {
+  if (!dateString) return ''
+  // Tomar solo la parte de la fecha (YYYY-MM-DD) sin la hora
+  const [year, month, day] = dateString.split('T')[0].split('-')
+  return new Date(year, month - 1, day).toLocaleDateString('es-CL')
+}
+
 export default function DetalleExperienciaPage() {
 
   initMercadoPago('APP_USR-042e0ef9-c8c0-4b1b-bdf7-de8f207b5fbf')
@@ -446,10 +454,10 @@ export default function DetalleExperienciaPage() {
                     <span className="font-medium">Capacidad:</span> {experiencia.capacidad} personas
                   </div>
                   <div>
-                    <span className="font-medium">Disponible desde:</span> {new Date(experiencia.fecha_inicio).toLocaleDateString()}
+                    <span className="font-medium">Disponible desde:</span> {formatDateWithoutTimezone(experiencia.fecha_inicio)}
                   </div>
                   <div>
-                    <span className="font-medium">Disponible hasta:</span> {new Date(experiencia.fecha_fin).toLocaleDateString()}
+                    <span className="font-medium">Disponible hasta:</span> {formatDateWithoutTimezone(experiencia.fecha_fin)}
                   </div>
                 </div>
               </div>
@@ -498,7 +506,7 @@ export default function DetalleExperienciaPage() {
                             ))}
                           </div>
                           <span className="ml-2 text-sm text-gray-500">
-                            {new Date(resena.creado_en).toLocaleDateString()}
+                            {formatDateWithoutTimezone(resena.creado_en)}
                           </span>
                         </div>
                         <p className="text-gray-700">{resena.comentario}</p>
@@ -632,7 +640,10 @@ export default function DetalleExperienciaPage() {
             </p>
             <div className="mb-4 p-3 bg-gray-50 rounded">
               <p><strong>Experiencia:</strong> {experiencia.titulo}</p>
-              <p><strong>Fecha:</strong> {fechaReserva ? new Date(fechaReserva).toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : 'No seleccionada'}</p>
+              <p><strong>Fecha:</strong> {fechaReserva ? (() => {
+                const [year, month, day] = fechaReserva.split('-')
+                return new Date(year, month - 1, day).toLocaleDateString('es-CL', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+              })() : 'No seleccionada'}</p>
               <p><strong>Cantidad:</strong> {cantidadPersonas} persona{cantidadPersonas > 1 ? 's' : ''}</p>
               <p><strong>Total a pagar:</strong> ${(precioCLP * cantidadPersonas).toLocaleString()} CLP</p>
               <p className="text-sm text-gray-600 mt-2">Pago procesado con Transbank</p>
