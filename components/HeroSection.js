@@ -1,8 +1,10 @@
 'use client'
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 
 export default function HeroSection() {
+  const router = useRouter()
   const [searchData, setSearchData] = useState({
     destino: '',
     fecha: '',
@@ -10,9 +12,16 @@ export default function HeroSection() {
   })
 
   const handleSearch = () => {
-    console.log('Búsqueda:', searchData)
-    // Aquí integrarías con tu lógica de búsqueda
-    document.getElementById('explorar')?.scrollIntoView({ behavior: 'smooth' })
+    // Construir query params para la búsqueda
+    const params = new URLSearchParams()
+    
+    if (searchData.destino) params.set('ubicacion', searchData.destino)
+    if (searchData.fecha) params.set('fechaInicio', searchData.fecha)
+    if (searchData.tipo) params.set('categoria', searchData.tipo)
+    
+    // Navegar a página de experiencias con filtros
+    const queryString = params.toString()
+    router.push(`/experiencias${queryString ? `?${queryString}` : ''}`)
   }
 
   return (

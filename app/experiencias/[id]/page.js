@@ -622,7 +622,7 @@ export default function DetalleExperienciaPage() {
                 </button>
 
                 <p className="text-xs text-gray-500 mt-2 text-center">
-                  Pago seguro con Transbank 🔒
+                  Pago seguro con Transbank
                 </p>
               </div>
             </div>

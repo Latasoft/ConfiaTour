@@ -1,13 +1,34 @@
 'use client'
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import FiltrosExperiencias from '../../components/FiltrosExperiencias'
 import ExperienciaCard from '../../components/ExperienciaCard'
 import { getExperiencias } from '../../lib/experiencias'
 
 export default function ExperienciasPage() {
+  const searchParams = useSearchParams()
   const [experiencias, setExperiencias] = useState([])
   const [loading, setLoading] = useState(true)
   const [filtros, setFiltros] = useState({})
+
+  // Cargar filtros desde URL al montar el componente
+  useEffect(() => {
+    const filtrosIniciales = {}
+    
+    if (searchParams.get('ubicacion')) {
+      filtrosIniciales.ubicacion = searchParams.get('ubicacion')
+    }
+    if (searchParams.get('fechaInicio')) {
+      filtrosIniciales.fechaInicio = searchParams.get('fechaInicio')
+    }
+    if (searchParams.get('categoria')) {
+      filtrosIniciales.categoria = searchParams.get('categoria')
+    }
+    
+    if (Object.keys(filtrosIniciales).length > 0) {
+      setFiltros(filtrosIniciales)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     cargarExperiencias()
@@ -35,7 +56,7 @@ export default function ExperienciasPage() {
         <div className="max-w-7xl mx-auto px-5">
           <h1 className="text-4xl font-bold text-center mb-8">Explorar Experiencias</h1>
           
-          <FiltrosExperiencias onFiltrosChange={handleFiltrosChange} />
+          <FiltrosExperiencias onFiltrosChange={handleFiltrosChange} filtrosIniciales={filtros} />
           
           {loading ? (
             <div className="text-center py-12">

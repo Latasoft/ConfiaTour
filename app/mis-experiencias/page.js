@@ -249,7 +249,7 @@ export default function MisExperienciasPage() {
       <div className="min-h-screen bg-[#f6f4f2] flex items-center justify-center">
         <div className="text-center max-w-md">
           <div className="bg-white rounded-xl shadow-lg p-8">
-            <div className="text-6xl mb-4">🔒</div>
+            <div className="text-6xl mb-4"></div>
             <h2 className="text-2xl font-bold mb-4 text-gray-900">Acceso Restringido</h2>
             <p className="text-gray-600 mb-6">{error}</p>
             <div className="flex gap-3 justify-center">

@@ -1,10 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { FiltrosExperiencias, Categoria } from '@/types'
 
 interface FiltrosExperienciasProps {
   onFiltrosChange: (filtros: FiltrosExperiencias) => void
+  filtrosIniciales?: FiltrosExperiencias
 }
 
 const categorias: Categoria[] = [
@@ -19,8 +20,15 @@ const categorias: Categoria[] = [
   'tours'
 ]
 
-export default function FiltrosExperienciasComponent({ onFiltrosChange }: FiltrosExperienciasProps) {
-  const [filtros, setFiltros] = useState<FiltrosExperiencias>({})
+export default function FiltrosExperienciasComponent({ onFiltrosChange, filtrosIniciales = {} }: FiltrosExperienciasProps) {
+  const [filtros, setFiltros] = useState<FiltrosExperiencias>(filtrosIniciales)
+
+  // Actualizar filtros cuando cambien los filtros iniciales (desde URL)
+  useEffect(() => {
+    if (Object.keys(filtrosIniciales).length > 0) {
+      setFiltros(filtrosIniciales)
+    }
+  }, [filtrosIniciales])
 
   const handleInputChange = (campo: keyof FiltrosExperiencias, valor: any) => {
     const nuevosFiltros = { ...filtros, [campo]: valor || undefined }

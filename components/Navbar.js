@@ -15,11 +15,13 @@ import { usePathname } from 'next/navigation'
 // Obtener emails de admin desde variable de entorno
 const getAdminEmails = () => {
   const emails = process.env.NEXT_PUBLIC_ADMIN_EMAILS
+  console.log('📧 NEXT_PUBLIC_ADMIN_EMAILS:', emails)
   if (!emails) return []
   return emails.split(',').map(email => email.trim().toLowerCase())
 }
 
 const ADMIN_EMAILS = getAdminEmails()
+console.log('✅ Admin emails list:', ADMIN_EMAILS)
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
@@ -60,7 +62,15 @@ export default function Navbar() {
   useEffect(() => {
     if (isLoaded && user) {
       const userEmail = user.emailAddresses[0]?.emailAddress?.toLowerCase()
-      setIsAdmin(userEmail ? ADMIN_EMAILS.includes(userEmail) : false)
+      const isUserAdmin = userEmail ? ADMIN_EMAILS.includes(userEmail) : false
+      
+      console.log('🔐 Admin Check:', {
+        userEmail,
+        adminEmails: ADMIN_EMAILS,
+        isAdmin: isUserAdmin
+      })
+      
+      setIsAdmin(isUserAdmin)
       
       // Obtener perfil del usuario
       fetchUserProfile()
