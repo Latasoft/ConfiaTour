@@ -10,6 +10,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Logging para debug (solo en desarrollo)
+/*
 if (process.env.NODE_ENV !== 'production') {
   console.log('[DEBUG] Supabase config:', {
     url: supabaseUrl ? 'OK' : 'MISSING',
@@ -17,6 +18,7 @@ if (process.env.NODE_ENV !== 'production') {
     serviceKey: supabaseServiceKey ? 'CONFIGURADA' : 'FALTA'
   })
 }
+*/
 
 /**
  * Cliente público de Supabase para operaciones sin autenticación

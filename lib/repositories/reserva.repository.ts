@@ -60,8 +60,6 @@ export class ReservaRepository {
    * VERSIÓN ATÓMICA: Usa función SQL con row-level locking para prevenir double booking
    */
   async create(reserva: Partial<Reserva>): Promise<Reserva> {
-    console.log('💾 Repository: Creando reserva atómica con validación de capacidad...')
-
     // Usar función SQL atómica que previene race conditions
     const { data, error } = await this.client.rpc('create_reserva_atomic', {
       p_experiencia_id: reserva.experiencia_id,

@@ -158,13 +158,6 @@ export class ExperienciaService {
     experienciaId: string, 
     fecha: string
   ): Promise<number> {
-    console.log(`\n═══════════════════════════════════════════════════════`)
-    console.log(`🔍 CALCULANDO DISPONIBILIDAD`)
-    console.log(`Experiencia: ${experienciaId}`)
-    console.log(`Fecha: ${fecha}`)
-    console.log(`Fecha/hora servidor: ${new Date().toISOString()}`)
-    console.log(`═══════════════════════════════════════════════════════\n`)
-
     // 🚀 OPTIMIZACIÓN: Limpieza on-demand de reservas expiradas
     // Ejecutar ANTES de calcular disponibilidad para asegurar datos actualizados
     await this.cleanupExpiredForExperience(experienciaId, fecha)
@@ -173,10 +166,7 @@ export class ExperienciaService {
     const experiencia = await this.repository.getById(experienciaId)
     const capacidadTotal = experiencia.capacidad
 
-    console.log(`📊 Capacidad total: ${capacidadTotal}`)
-
     const now = new Date().toISOString()
-    console.log(`⏰ Hora actual: ${now}`)
 
     // 2. Sumar personas ya reservadas para esa fecha
     // Incluir: confirmadas, pendiente_pago NO expiradas, o cualquier reserva pagada
@@ -196,43 +186,13 @@ export class ExperienciaService {
       throw new Error('Error al calcular capacidad disponible')
     }
 
-    console.log(`\n📋 RESERVAS ENCONTRADAS: ${reservas?.length || 0}`)
-    if (reservas && reservas.length > 0) {
-      reservas.forEach((r, index) => {
-        console.log(`\n  Reserva ${index + 1}:`)
-        console.log(`    ID: ${r.id}`)
-        console.log(`    Personas: ${r.cantidad_personas}`)
-        console.log(`    Estado: ${r.estado}`)
-        console.log(`    Pagado: ${r.pagado}`)
-        console.log(`    Expira: ${r.expires_at || 'N/A'}`)
-        console.log(`    Fecha exp: ${r.fecha_experiencia}`)
-        console.log(`    Creada: ${r.creado_en}`)
-        
-        // Análisis de por qué cuenta
-        const razones = []
-        if (r.estado === 'confirmada') razones.push('✅ estado=confirmada')
-        if (r.pagado === true) razones.push('✅ pagado=true')
-        if (r.estado === 'pendiente_pago' && r.expires_at >= now) {
-          razones.push(`✅ pendiente_pago NO expirada (expira: ${r.expires_at})`)
-        }
-        console.log(`    Por qué cuenta: ${razones.join(' O ')}`)
-      })
-    } else {
-      console.log(`  ⚠️ No se encontraron reservas con los filtros aplicados`)
-    }
-
     const personasReservadas = reservas?.reduce(
       (total, r) => total + r.cantidad_personas, 
       0
     ) || 0
 
-    console.log(`\n👥 TOTAL PERSONAS RESERVADAS: ${personasReservadas}`)
-
     // 3. Retornar cupos disponibles (nunca negativo)
     const disponible = Math.max(0, capacidadTotal - personasReservadas)
-    console.log(`\n✨ CUPOS DISPONIBLES: ${disponible}`)
-    console.log(`   (${capacidadTotal} capacidad total - ${personasReservadas} reservadas = ${disponible} disponibles)`)
-    console.log(`═══════════════════════════════════════════════════════\n`)
     
     return disponible
   }

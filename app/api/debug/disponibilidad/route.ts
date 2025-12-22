@@ -1,11 +1,20 @@
+// ENDPOINT DESHABILITADO - Solo para debugging en desarrollo
+// Descomentar solo si necesitas debuggear problemas de disponibilidad
+
 import { NextRequest, NextResponse } from 'next/server'
+
+export async function GET(req: NextRequest) {
+  return NextResponse.json(
+    { error: 'Endpoint deshabilitado' },
+    { status: 404 }
+  )
+}
+
+/*
+// Código original comentado - descomentar si se necesita debuggear
 import { supabaseAdmin } from '@/lib/db/supabase'
 
-/**
- * ENDPOINT DE DIAGNÓSTICO - Ver exactamente qué reservas existen
- * GET /api/debug/disponibilidad?experiencia_id=XXX&fecha=YYYY-MM-DD
- */
-export async function GET(req: NextRequest) {
+export async function GET_DEBUG(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
     const experienciaId = searchParams.get('experiencia_id')
@@ -120,3 +129,4 @@ export async function GET(req: NextRequest) {
     )
   }
 }
+*/

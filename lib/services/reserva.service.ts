@@ -42,16 +42,12 @@ export class ReservaService {
    * Crea una nueva reserva con validación y conversión de moneda
    */
   async crearReserva(data: Partial<Reserva>): Promise<Reserva> {
-    console.log('[DEBUG] Service: Datos recibidos para crear reserva:', JSON.stringify(data, null, 2))
-    
     // Validar datos
     const validation = validateData(reservaSchema, data)
     if (!validation.success) {
       console.error('[ERROR] Service: Validación fallida:', validation.errors)
       throw new ValidationError(validation.errors.join(', '))
     }
-
-    console.log('✅ Service: Datos validados:', JSON.stringify(validation.data, null, 2))
 
     // VALIDACIÓN DE CAPACIDAD DISPONIBLE
     const disponible = await experienciaService.getCapacidadDisponible(
