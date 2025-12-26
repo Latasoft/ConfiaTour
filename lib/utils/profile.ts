@@ -89,7 +89,7 @@ export async function updateUserType(
   userType: 'viajero' | 'guia' | 'admin'
 ): Promise<boolean> {
   try {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('profiles')
       .update({ user_type: userType })
       .eq('clerk_user_id', clerkUserId)
