@@ -126,40 +126,29 @@ export default function PerfilPage() {
     setLoading(true);
 
     try {
-      // Primero verificar que el perfil existe
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('clerk_user_id', user.id)
-        .maybeSingle();
-
-      if (!existingProfile) {
-        // Si no existe, crear el perfil primero
-        await createProfile();
-        return;
-      }
-
-      // Actualizar el perfil existente
-      const { data, error } = await supabase
-        .from('profiles')
-        .update({
+      // Usar API en lugar de acceso directo a Supabase
+      const response = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
           full_name: formData.full_name,
           bio: formData.bio,
-          phone: formData.phone,
-          updated_at: new Date().toISOString()
+          phone: formData.phone
         })
-        .eq('clerk_user_id', user.id)
-        .select()
-        .maybeSingle();
+      });
 
-      if (error) {
-        console.error('Error updating profile:', error);
-        alert('Error al actualizar el perfil: ' + error.message);
+      const result = await response.json();
+
+      if (!response.ok) {
+        console.error('Error updating profile:', result.error);
+        alert('Error al actualizar el perfil: ' + result.error);
         return;
       }
 
-      if (data) {
-        setProfile(data);
+      if (result.success && result.data) {
+        setProfile(result.data);
         setEditing(false);
         success('Perfil actualizado correctamente');
       }

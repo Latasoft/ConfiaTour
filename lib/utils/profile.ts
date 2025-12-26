@@ -1,5 +1,5 @@
 import { currentUser } from '@clerk/nextjs/server'
-import { supabase } from '../supabaseClient'
+import { supabaseAdmin } from '../db/supabase'
 
 /**
  * Asegura que el perfil del usuario existe en Supabase
@@ -8,7 +8,7 @@ import { supabase } from '../supabaseClient'
 export async function ensureUserProfile(clerkUserId: string): Promise<void> {
   try {
     // Verificar si el perfil ya existe
-    const { data: existingProfile } = await supabase
+    const { data: existingProfile } = await supabaseAdmin
       .from('profiles')
       .select('clerk_user_id')
       .eq('clerk_user_id', clerkUserId)
@@ -35,7 +35,7 @@ export async function ensureUserProfile(clerkUserId: string): Promise<void> {
     // Crear perfil nuevo
     console.log(`👤 Creando perfil para usuario: ${clerkUserId}`)
     
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('profiles')
       .insert({
         clerk_user_id: clerkUserId,
@@ -67,7 +67,7 @@ export async function getUserProfile(clerkUserId: string) {
   await ensureUserProfile(clerkUserId)
 
   // Obtener perfil
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('profiles')
     .select('*')
     .eq('clerk_user_id', clerkUserId)

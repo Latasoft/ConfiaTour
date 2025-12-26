@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@clerk/nextjs/server'
 import { getUserProfile, ensureUserProfile } from '@/lib/utils/profile'
-import { supabase } from '@/lib/supabaseClient'
+import { supabaseAdmin } from '@/lib/db/supabase'
 
 /**
  * GET - Obtener perfil del usuario autenticado
@@ -73,8 +73,8 @@ export async function PUT(req: NextRequest) {
     // Asegurar que el perfil existe
     await ensureUserProfile(userId)
 
-    // Actualizar perfil (ya sabemos que existe)
-    const { data, error } = await supabase
+    // Actualizar perfil (ya sabemos que existe) usando supabaseAdmin
+    const { data, error } = await supabaseAdmin
       .from('profiles')
       .update(body)
       .eq('clerk_user_id', userId)
