@@ -7,12 +7,12 @@ import { supabaseAdmin } from '../db/supabase'
  */
 export async function ensureUserProfile(clerkUserId: string): Promise<void> {
   try {
-    // Verificar si el perfil ya existe
-    const { data: existingProfile } = await supabaseAdmin
+    // Verificar si el perfil ya existe por clerk_user_id
+    const { data: existingProfile, error: selectError } = await supabaseAdmin
       .from('profiles')
-      .select('clerk_user_id')
+      .select('clerk_user_id, email')
       .eq('clerk_user_id', clerkUserId)
-      .single()
+      .maybeSingle()
 
     if (existingProfile) {
       // Perfil ya existe
@@ -32,6 +32,31 @@ export async function ensureUserProfile(clerkUserId: string): Promise<void> {
       return
     }
 
+    // Verificar si ya existe un perfil con ese email (podría ser de una sesión anterior)
+    const { data: profileByEmail } = await supabaseAdmin
+      .from('profiles')
+      .select('clerk_user_id, email')
+      .eq('email', userEmail)
+      .maybeSingle()
+
+    if (profileByEmail) {
+      // Ya existe un perfil con este email, actualizar el clerk_user_id
+      console.log(`🔄 Actualizando clerk_user_id para email: ${userEmail}`)
+      
+      const { error: updateError } = await supabaseAdmin
+        .from('profiles')
+        .update({ clerk_user_id: clerkUserId })
+        .eq('email', userEmail)
+
+      if (updateError) {
+        console.error('[ERROR] Error actualizando clerk_user_id:', updateError)
+        throw updateError
+      }
+
+      console.log('✅ Perfil actualizado exitosamente')
+      return
+    }
+
     // Crear perfil nuevo
     console.log(`👤 Creando perfil para usuario: ${clerkUserId}`)
     
@@ -47,6 +72,12 @@ export async function ensureUserProfile(clerkUserId: string): Promise<void> {
       })
 
     if (error) {
+      // Si es error de duplicado, ignorar (race condition)
+      if (error.code === '23505') {
+        console.log('[INFO] Perfil ya existe (race condition), continuando...')
+        return
+      }
+      
       console.error('[ERROR] Error creando perfil:', error)
       throw error
     }
