@@ -5,7 +5,7 @@ import { createClient } from '@supabase/supabase-js'
 export async function POST(request) {
   try {
     // Verificar autenticación con Clerk
-    const { userId } = auth()
+    const { userId } = await auth()
     
     if (!userId) {
       return NextResponse.json(
@@ -104,7 +104,7 @@ export async function POST(request) {
 export async function DELETE(request) {
   try {
     // Verificar autenticación
-    const { userId } = auth()
+    const { userId } = await auth()
     
     if (!userId) {
       return NextResponse.json(
