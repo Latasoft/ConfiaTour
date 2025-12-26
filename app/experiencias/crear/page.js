@@ -87,8 +87,31 @@ export default function CrearExperienciaPage() {
 
     try {
       setUploadingImages(true)
-      // Usar user.id para las imágenes
-      const uploadedImages = await uploadMultipleImages(files, user.id)
+      
+      // Obtener cliente autenticado de Supabase
+      const response = await fetch('/api/storage/upload', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          files: await Promise.all(
+            Array.from(files).map(async file => ({
+              name: file.name,
+              type: file.type,
+              data: await fileToBase64(file)
+            }))
+          ),
+          carpeta: 'experiencias'
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Error al subir imágenes')
+      }
+
+      const { images: uploadedImages } = await response.json()
       
       const newImages = uploadedImages.map(img => ({
         url: img.url,
@@ -99,10 +122,20 @@ export default function CrearExperienciaPage() {
       
     } catch (error) {
       console.error('Error subiendo imágenes:', error)
-      alert('Error al subir las imágenes: ' + error.message)
+      showErrorToast(error.message || 'Error al subir las imágenes')
     } finally {
       setUploadingImages(false)
     }
+  }
+
+  // Función helper para convertir File a base64
+  const fileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = error => reject(error)
+    })
   }
 
   const removeImage = async (index) => {
@@ -111,7 +144,18 @@ export default function CrearExperienciaPage() {
       
       // Si tiene path, eliminar del storage
       if (imageToRemove.path) {
-        await deleteImage(imageToRemove.path)
+        const response = await fetch('/api/storage/upload', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ path: imageToRemove.path })
+        })
+
+        if (!response.ok) {
+          const errorData = await response.json()
+          throw new Error(errorData.error || 'Error al eliminar imagen')
+        }
       }
       
       const updatedImages = images.filter((_, i) => i !== index)
@@ -119,7 +163,7 @@ export default function CrearExperienciaPage() {
       
     } catch (error) {
       console.error('Error eliminando imagen:', error)
-      alert('Error al eliminar la imagen')
+      showErrorToast(error.message || 'Error al eliminar la imagen')
     }
   }
 
@@ -137,27 +181,37 @@ export default function CrearExperienciaPage() {
 
     // Validaciones básicas
     if (!formData.titulo.trim()) {
-      alert('El título es requerido')
+      showErrorToast('El título es requerido')
       return
     }
 
-    if (!formData.descripcion.trim()) {
-      alert('La descripción es requerida')
+    if (!formData.descripcion || !formData.descripcion.trim()) {
+      showErrorToast('La descripción es requerida')
+      return
+    }
+
+    if (formData.descripcion.trim().length < 20) {
+      showErrorToast('La descripción debe tener al menos 20 caracteres')
       return
     }
 
     if (!formData.categoria) {
-      alert('La categoría es requerida')
+      showErrorToast('La categoría es requerida')
       return
     }
 
     if (!formData.precio || parseFloat(formData.precio) <= 0) {
-      alert('El precio debe ser mayor a 0')
+      showErrorToast('El precio debe ser mayor a 0')
       return
     }
 
     if (!formData.capacidad || parseInt(formData.capacidad) <= 0) {
-      alert('La capacidad debe ser mayor a 0')
+      showErrorToast('La capacidad debe ser mayor a 0')
+      return
+    }
+
+    if (images.length === 0) {
+      showErrorToast('Debes subir al menos una imagen')
       return
     }
 
@@ -320,16 +374,27 @@ export default function CrearExperienciaPage() {
 
               {/* Descripción */}
               <div>
-                <label className="block text-sm font-medium mb-2">Descripción *</label>
+                <label className="block text-sm font-medium mb-2">
+                  Descripción * 
+                  <span className="text-gray-500 text-xs ml-2">
+                    ({formData.descripcion.length}/20 caracteres mínimo)
+                  </span>
+                </label>
                 <textarea
                   name="descripcion"
                   value={formData.descripcion}
                   onChange={handleInputChange}
                   rows="4"
                   className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#23A69A] focus:border-transparent"
-                  placeholder="Describe tu experiencia en detalle..."
+                  placeholder="Describe tu experiencia en detalle... (mínimo 20 caracteres)"
                   required
+                  minLength={20}
                 />
+                {formData.descripcion.length > 0 && formData.descripcion.length < 20 && (
+                  <p className="text-red-500 text-sm mt-1">
+                    La descripción debe tener al menos 20 caracteres
+                  </p>
+                )}
               </div>
 
               {/* Categoría y Ubicación */}
